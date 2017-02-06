@@ -19,5 +19,12 @@
     <DnxInvisibleContent Include="bower.json" />
     <DnxInvisibleContent Include=".bowerrc" />
   </ItemGroup>
+  <ItemGroup>
+    <DnxInvisibleCompile Include="Controllers\AccountController.cs" />
+    <DnxInvisibleCompile Include="Controllers\EventController.cs" />
+    <DnxInvisibleCompile Include="Controllers\MatchController.cs" />
+    <DnxInvisibleCompile Include="Controllers\PerformanceController.cs" />
+    <DnxInvisibleCompile Include="Controllers\TeamController.cs" />
+  </ItemGroup>
   <Import Project="$(VSToolsPath)\DotNet.Web\Microsoft.DotNet.Web.targets" Condition="'$(VSToolsPath)' != ''" />
 </Project>
