@@ -6,6 +6,9 @@ namespace RobotServer.SQLDataObjects {
         public EventTime EventTime { get; set; }
         public EventType EventType { get; set; }
 
+        public string PerformanceId { get; set; }
+        public Performance Performance { get; set; }
+
         public ClientRobotEvent getClient() {
             return new ClientRobotEvent() {
                 EventTime = EventTime,

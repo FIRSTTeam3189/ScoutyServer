@@ -89,12 +89,11 @@ namespace RobotServer.Models
 
             var te = new Team
             {
-                Id = obj[EventKey].ToObject<string>(),
                 TeamNumber = obj["team_number"].ToObject<int>(),
                 NickName = obj["nickname"].ToObject<string>(),
                 RookieYear = obj["rookie_year"].ToObject<int?>() ?? -1,
                 TeamLocation = obj["location"].ToObject<string>(),
-                TeamPerformance = new List<Performance >()
+                Performances = new List<Performance >()
             };
 
             return te;

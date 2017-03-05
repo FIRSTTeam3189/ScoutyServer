@@ -10,7 +10,6 @@ namespace RobotServer.SQLDataObjects
         public string Id { get; set; }
         public MatchType MatchType { get; set; }
         public int MatchNubmer { get; set; }
-        public string eventid { get; set; }
         public virtual int RedOne { get; set; }
         public virtual int RedTwo { get; set; }
         public virtual int RedThree { get; set; }
@@ -18,6 +17,10 @@ namespace RobotServer.SQLDataObjects
         public virtual int BlueTwo { get; set; }
         public virtual int BlueThree { get; set; }
         public int time { get; set; }
+        public string EventId { get; set; }
+        public Event Event { get; set; }
+
+        public List<Performance> Performances { get; set; }
 
         public ClientMatch GetClientMatch() {
             return new ClientMatch() {
@@ -29,7 +32,8 @@ namespace RobotServer.SQLDataObjects
                 RedOne = RedOne,
                 RedTwo = RedTwo,
                 RedThree = RedThree,
-                Time = time
+                Time = time,
+                EventCode = Event.EventCode
             };
         }
 

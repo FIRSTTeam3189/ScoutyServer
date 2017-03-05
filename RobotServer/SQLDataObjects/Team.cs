@@ -2,6 +2,7 @@
 using RobotServer.SQLDataObjects;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
@@ -9,16 +10,18 @@ namespace ScoutingServer.SQLDataObjects
 {
     public class Team
     {
-        public string Id { get; set; }
         public int RookieYear { get; set; }
 
         public string NickName { get; set; }
   
         public string TeamLocation { get; set; }
 
+        [Key]
         public int TeamNumber { get; set; }
 
-        public virtual List<Performance> TeamPerformance { get; set; }
+        public virtual List<Performance> Performances { get; set; }
+
+        public List<TeamEvent> Events { get; set; }
 
         public ClientTeam GetClientTeam()
         {
@@ -32,21 +35,21 @@ namespace ScoutingServer.SQLDataObjects
         }
 
         public static bool operator ==(Team a, Team b) {
-            return a?.Id == b?.Id;
+            return a?.TeamNumber == b?.TeamNumber;
         }
 
         public static bool operator !=(Team a, Team b) {
-            return a?.Id != b?.Id;
+            return a?.TeamNumber != b?.TeamNumber;
         }
 
         public override bool Equals(object obj) {
-            if(obj is Account)
-                return (obj as Account)?.Id == Id;
+            if(obj is Team)
+                return (obj as Team)?.TeamNumber == TeamNumber;
             return false;
         }
 
         public override int GetHashCode() {
-            return Id.GetHashCode();
+            return TeamNumber.GetHashCode();
         }
     }
 }

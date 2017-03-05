@@ -24,7 +24,7 @@ namespace RobotServer.SQLDataObjects
 
         public bool Official { get; set; }
 
-        public List<Team> Teams { get; set; }
+        public List<TeamEvent> Teams { get; set; }
 
         public List<Match> Matchs { get; set; }
 

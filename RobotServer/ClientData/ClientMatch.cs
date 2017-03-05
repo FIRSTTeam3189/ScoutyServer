@@ -8,6 +8,7 @@ namespace RobotServer.SQLDataObjects
     {
         public MatchType MatchType { get; set; }
         public int MatchNumber { get; set; }
+        public string EventCode { get; set; }
         public int RedOne { get; set; }
         public int RedTwo { get; set; }
         public int RedThree { get; set; }

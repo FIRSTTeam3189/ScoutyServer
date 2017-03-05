@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
-using ScoutingServer.SQLDataObjects;
-using RobotServer.ClientData;
+﻿using RobotServer.ClientData;
 
 namespace RobotServer.SQLDataObjects {
     public class Account  {
+        public const int ROLE_LEVEL_USER = 0;
+        public const int ROLE_LEVEL_MOD = 1;
+        public const int ROLE_LEVEL_ADMIN = 2;
+        public const int ROLE_LEVEL_DEV = 3;
 
         public Account() {
 
@@ -12,7 +14,7 @@ namespace RobotServer.SQLDataObjects {
         public Account(string Id) : base() {
             this.Id = Id;
             Security = null;
-            Role = new Role(Id, Role.ROLE_LEVEL_DEV);// TODO: change this to only give user level Role to new users.
+            AuthLevel = Account.ROLE_LEVEL_DEV;
         }
 
         public ClientAccount GetClientAccount() {
@@ -28,8 +30,19 @@ namespace RobotServer.SQLDataObjects {
         public string Username { get; set; }
         public string RealName { get; set; }
         public string TeamNumber { get; set; }
-        public virtual Role Role { get; set; }
+        public int AuthLevel { get; set; }
         public virtual AccountSecurity Security { get; set; }
+        public bool IsModLevel() {
+            return AuthLevel >= ROLE_LEVEL_MOD;
+        }
+
+        public bool IsAdminLevel() {
+            return AuthLevel >= ROLE_LEVEL_ADMIN;
+        }
+
+        public bool IsDevLevel() {
+            return AuthLevel >= ROLE_LEVEL_DEV;
+        }
 
         public static bool operator ==(Account a, Account b) {
             if(a != null && b != null) {
