@@ -1,18 +1,23 @@
 ﻿using RobotServer.ClientData;
+using ScoutingServer.SQLDataObjects;
 
 namespace RobotServer.SQLDataObjects {
     public class RobotEvent {
-        public string Id { get; set; }
-        public EventTime EventTime { get; set; }
-        public EventType EventType { get; set; }
-
-        public string PerformanceId { get; set; }
-        public Performance Performance { get; set; }
+        public int TeamNumber { get; set; }
+        public int MatchId { get; set; }
+        public Match Match { get; set; }
+        public Team Team { get; set; }
+        public ActionType Action { get; set; }
+        public ActionPeriod Period { get; set; }
+        public int Time { get; set; }
 
         public ClientRobotEvent getClient() {
             return new ClientRobotEvent() {
-                EventTime = EventTime,
-                EventType = EventType
+                Action = Action,
+                MatchId = MatchId,
+                Period = Period,
+                TeamId = TeamNumber,
+                Time = Time
             };
         }
     }

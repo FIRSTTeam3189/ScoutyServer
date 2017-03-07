@@ -1,58 +1,56 @@
-﻿using System;
+﻿using BlueAllianceClient;
+using RobotServer.ClientData;
+using ScoutingServer.SQLDataObjects;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
 namespace RobotServer.SQLDataObjects
 {
-    public class Match
-    {
-        public string Id { get; set; }
-        public MatchType MatchType { get; set; }
-        public int MatchNubmer { get; set; }
-        public virtual int RedOne { get; set; }
-        public virtual int RedTwo { get; set; }
-        public virtual int RedThree { get; set; }
-        public virtual int BlueOne { get; set; }
-        public virtual int BlueTwo { get; set; }
-        public virtual int BlueThree { get; set; }
-        public int time { get; set; }
+    public class Match {
+        public string MatchId { get; set; }
+        public string MatchInfo { get; set; }
         public string EventId { get; set; }
         public Event Event { get; set; }
-
+        public List<RobotEvent> RobotEvents { get; set; }
         public List<Performance> Performances { get; set; }
+
+        public Match() {
+
+        }
+
+        public Match(BAMatch match) {
+            MatchId = match.Key;
+            MatchInfo = match.MatchInfo();
+            EventId = match.Event.Key;
+        }
 
         public ClientMatch GetClientMatch() {
             return new ClientMatch() {
-                MatchType = MatchType,
-                MatchNumber = MatchNubmer,
-                BlueOne = BlueOne,
-                BlueTwo = BlueTwo,
-                BlueThree = BlueThree,
-                RedOne = RedOne,
-                RedTwo = RedTwo,
-                RedThree = RedThree,
-                Time = time,
-                EventCode = Event.EventCode
+                MatchId = MatchId,
+                EventId = EventId,
+                MatchInfo = MatchInfo,
+                RobotEvents = RobotEvents.Select(x => x.getClient()).ToList()
             };
         }
 
         public static bool operator ==(Match a, Match b) {
-            return a?.Id == b?.Id;
+            return a?.MatchId == b?.MatchId;
         }
 
         public static bool operator !=(Match a, Match b) {
-            return a?.Id != b?.Id;
+            return a?.MatchId != b?.MatchId;
         }
 
         public override bool Equals(object obj) {
-            if(obj is Account)
-                return (obj as Account)?.Id == Id;
+            if(obj is Match)
+                return (obj as Match)?.MatchId == MatchId;
             return false;
         }
 
         public override int GetHashCode() {
-            return Id.GetHashCode();
+            return MatchId.GetHashCode();
         }
 
     }

@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
+using BlueAllianceClient;
 
 namespace ScoutingServer.Controllers {
 
@@ -32,23 +33,17 @@ namespace ScoutingServer.Controllers {
         [Authorize]
         [HttpPost]
         public async Task<List<ClientEvent>> Refresh(RefreshEventRequest request) {
-            BlueAllianceClient refresher = new BlueAllianceClient();
+            BlueAllianceContext refresher = new BlueAllianceContext();
 
             var events = await refresher.GetEvents(request.Year);
 
             var dbEvents = context.Events.ToList();
 
             foreach(var e in dbEvents) {
-                var ev = events.FirstOrDefault(x => x.Id == e.Id);
+                var ev = events.FirstOrDefault(x => x.Key == e.EventId);
                 if(ev != null) {
                     e.Location = ev.Location;
-                    e.Matchs = ev.Matchs;
-                    e.EndDate = ev.EndDate;
                     e.EventCode = ev.EventCode;
-                    e.Official = ev.Official;
-                    e.Year = ev.Year;
-                    e.Website = ev.Website;
-                    e.StartDate = ev.StartDate;
                     events.Remove(ev);
                 } else {
                     context.Events.Remove(e);
@@ -56,20 +51,12 @@ namespace ScoutingServer.Controllers {
             }
 
             foreach(var e in events) {
-                context.Events.Add(e);
+                context.Events.Add(new Event(e));
             }
+
             context.SaveChanges();
             var list = context.Events.ToList();
-            return (from e in list
-                    select new ClientEvent() {
-                        StartDate = e.StartDate,
-                        Official = e.Official,
-                        Year = e.Year,
-                        EndDate = e.EndDate,
-                        EventCode = e.EventCode,
-                        Location = e.Location,
-                        Website = e.Website
-                    }).ToList();
+            return list.Select(x => x.ClientEvent()).ToList();
         }
 
         [Route("GetTeams")]
@@ -77,13 +64,13 @@ namespace ScoutingServer.Controllers {
         [Authorize]
         [HttpPost]
         public async Task<List<ClientTeam>> GetTeams(EventTeamsRequest request) {
-            BlueAllianceClient refresher = new BlueAllianceClient();
-            var teams = await refresher.GetEventTeams(request.Year, request.EventCode);
-            var even = context.Events.Include(x => x.Teams).ThenInclude(c => c.Team).Where(x => x.EventCode == request.EventCode && x.Year == request.Year)
+            BlueAllianceContext refresher = new BlueAllianceContext();
+            var teams = (await refresher.GetEvent(request.Year, request.EventCode)).Teams;
+            var even = context.Events.Include(x => x.TeamEvents).ThenInclude(c => c.Team).Where(x => x.EventCode == request.EventCode && x.GetYear() == request.Year)
                 .FirstOrDefault();
             if(even == null) {
                 await Refresh(new RefreshEventRequest() { Year = request.Year });
-                even = context.Events.Where(x => x.EventCode == request.EventCode && x.Year == request.Year)
+                even = context.Events.Where(x => x.EventCode == request.EventCode && x.GetYear() == request.Year)
                     .FirstOrDefault();
             }
             if(even != null) {
@@ -91,14 +78,14 @@ namespace ScoutingServer.Controllers {
                     await TeamController.GetTeam(team.TeamNumber, context);
                     TeamEvent et = new TeamEvent() {
                         Event = even,
-                        Team = team
+                        Team = new SQLDataObjects.Team(team)
                     };
-                    even.Teams.Add(et);
+                    even.TeamEvents.Add(et);
                 }
                 context.SaveChanges();
                 //System.Diagnostics.Trace.TraceError("asdf" + teamss.Count);
 
-                return even.Teams.Select(x => x.Team.GetClientTeam()).ToList();
+                return even.Teams.Select(x => x.GetClientTeam()).ToList();
             } else {
                 throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
             }
@@ -109,27 +96,26 @@ namespace ScoutingServer.Controllers {
         [Authorize]
         [HttpPost]
         public async Task<List<ClientMatch>> GetMatchs(EventMatchesRequest request) {
-            BlueAllianceClient refresher = new BlueAllianceClient();
+            BlueAllianceContext refresher = new BlueAllianceContext();
 
-            var matchs = await refresher.GetEventMatches(request.Year, request.EventCode);
-            var even = context.Events.Where(x => x.EventCode == request.EventCode && x.Year == request.Year)
+            var matchs = (await refresher.GetEvent(request.Year, request.EventCode)).Matches;
+            var even = context.Events.Where(x => x.EventCode == request.EventCode && x.GetYear() == request.Year)
                 .FirstOrDefault();
             if(even == null) {
                 await Refresh(new RefreshEventRequest() { Year = request.Year });
-                even = context.Events.Where(x => x.EventCode == request.EventCode && x.Year == request.Year)
+                even = context.Events.Where(x => x.EventCode == request.EventCode && x.GetYear() == request.Year)
                     .FirstOrDefault();
             }
             if(even != null) {
                 if(matchs != null) {
-                    var matcheses = context.Matches.Where(x => x.EventId == even.Id).ToList();
+                    var matcheses = context.Matches.Where(x => x.EventId == even.EventId).ToList();
                     foreach(var match in matcheses) {
                         context.Matches.Remove(match);
                     }
                     even.Matchs = new List<Match>();
                     foreach(var match in matchs) {
-                        if(!even.Matchs.Contains(match)) {
-                            match.EventId = even.Id;
-                            even.Matchs.Add(match);
+                        if(!even.Matchs.Contains(new Match(match))) {
+                            even.Matchs.Add(new Match(match));
                         }
                     }
                 }

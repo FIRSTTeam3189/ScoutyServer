@@ -25,20 +25,23 @@ namespace RobotServer.Models
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TeamEvent>().HasOne<Team>(t => t.Team).WithMany(t => t.Events).HasForeignKey(t => t.TeamNumber);
-            modelBuilder.Entity<TeamEvent>().HasOne<Event>(e => e.Event).WithMany(e => e.Teams).HasForeignKey(e => e.EventId);
+            modelBuilder.Entity<TeamEvent>().HasOne<Event>(e => e.Event).WithMany(e => e.TeamEvents).HasForeignKey(e => e.EventId);
             modelBuilder.Entity<TeamEvent>().HasKey(t => new {t.EventId, t.TeamNumber});
-            Events.Include(e => e.Teams).ThenInclude(t => t.Team);
+            Events.Include(e => e.TeamEvents).ThenInclude(t => t.Team);
 
             modelBuilder.Entity<Match>().HasOne<Event>(e => e.Event).WithMany(t => t.Matchs).HasForeignKey(t => t.EventId);
             Events.Include(e => e.Matchs);
+            Matches.Include(t => t.Event);
 
-            modelBuilder.Entity<RobotEvent>().HasOne<Performance>(p => p.Performance).WithMany(w => w.Events).HasForeignKey(f => f.PerformanceId);
-            Performances.Include(r => r.Events);
+            modelBuilder.Entity<RobotEvent>().HasOne<Match>(p => p.Match).WithMany(w => w.RobotEvents).HasForeignKey(f => f.MatchId);
+            modelBuilder.Entity<RobotEvent>().HasOne<Team>(h => h.Team).WithMany(f => f.RobotEvents).HasForeignKey(l => l.TeamNumber);
+            RobotEvents.Include(r => r.Match);
+            RobotEvents.Include(j => j.Team);
 
             modelBuilder.Entity<Performance>().HasOne<Match>(m => m.Match).WithMany(v => v.Performances).HasForeignKey(g => g.MatchId);
-            Matches.Include(l => l.Performances);
-
             modelBuilder.Entity<Performance>().HasOne<Team>(k => k.Team).WithMany(d => d.Performances).HasForeignKey(u => u.TeamNumber);
+            modelBuilder.Entity<Performance>().HasKey(y => new {y.MatchId, y.TeamNumber});
+            Matches.Include(l => l.Performances);
             Teams.Include(x => x.Performances);
 
         }

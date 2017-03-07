@@ -7,12 +7,16 @@ using System.Linq;
 namespace RobotServer.ClientData
 {
     public class ClientPerformance {
-        public string Id { get; set; }
-        public int TeamId { get; set; }
-        public string EventCode { get; set; }
-        public int MatchNumber { get; set; }
-        public MatchType MatchType { get; set; }
-        public List<ClientRobotEvent> Events { get; set; }
-        public DateTime LastUpdated { get; set; }
+
+        public string MatchId { get; set; }
+        public int TeamNumber { get; set; }
+        public Team Team { get; set; }
+        public Match Match { get; set; }
+        public AllianceColor Color { get; set; }
+    }
+
+    public enum AllianceColor {
+        Red,
+        Blue
     }
 }

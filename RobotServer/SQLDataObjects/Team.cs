@@ -1,4 +1,5 @@
-﻿using RobotServer.ClientData;
+﻿using BlueAllianceClient;
+using RobotServer.ClientData;
 using RobotServer.SQLDataObjects;
 using System;
 using System.Collections.Generic;
@@ -11,17 +12,23 @@ namespace ScoutingServer.SQLDataObjects
     public class Team
     {
         public int RookieYear { get; set; }
-
         public string NickName { get; set; }
-  
         public string TeamLocation { get; set; }
-
         [Key]
         public int TeamNumber { get; set; }
-
         public virtual List<Performance> Performances { get; set; }
-
         public List<TeamEvent> Events { get; set; }
+        public List<RobotEvent> RobotEvents { get; set; }
+
+        public Team() {
+
+        }
+
+        public Team(BATeam team) {
+            NickName = team.Name;
+            TeamNumber = team.TeamNumber;
+            TeamLocation = team.Location;
+        }
 
         public ClientTeam GetClientTeam()
         {
@@ -29,8 +36,7 @@ namespace ScoutingServer.SQLDataObjects
             {
                 TeamNumber = TeamNumber,
                 RookieYear = RookieYear,
-                NickName = NickName,
-                TeamLocation = TeamLocation
+                Name = NickName
             };
         }
 

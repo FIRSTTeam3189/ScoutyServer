@@ -2,19 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RobotServer.SQLDataObjects
+namespace RobotServer.ClientData
 {
     public class ClientMatch
     {
-        public MatchType MatchType { get; set; }
-        public int MatchNumber { get; set; }
-        public string EventCode { get; set; }
-        public int RedOne { get; set; }
-        public int RedTwo { get; set; }
-        public int RedThree { get; set; }
-        public int BlueOne { get; set; }
-        public int BlueTwo { get; set; }
-        public int BlueThree { get; set; }
-        public int Time { get; set; }
+        public string MatchId { get; set; }
+        public string MatchInfo { get; set; }
+        public List<ClientTeam> Teams { get; set; }
+        public ClientEvent Event { get; set; }
+        public string EventId { get; set; }
+        public List<ClientRobotEvent> RobotEvents { get; set; }
     }
 }
