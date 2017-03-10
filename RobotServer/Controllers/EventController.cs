@@ -75,15 +75,16 @@ namespace ScoutingServer.Controllers {
             }
             if(even != null) {
                 foreach(var team in teams) {
-                    await TeamController.GetTeam(team.TeamNumber, context);
-                    TeamEvent et = new TeamEvent() {
-                        Event = even,
-                        Team = new SQLDataObjects.Team(team)
-                    };
-                    even.TeamEvents.Add(et);
+                    TeamController.GetTeam(team.TeamNumber, context, team);
+                    if(context.TeamEvents.Any(m => m.EventId == even.EventId && m.TeamNumber == team.TeamNumber)) {
+                        TeamEvent et = new TeamEvent() {
+                            Event = even,
+                            Team = new SQLDataObjects.Team(team)
+                        };
+                        context.TeamEvents.Add(et);
+                    }
                 }
                 context.SaveChanges();
-                //System.Diagnostics.Trace.TraceError("asdf" + teamss.Count);
 
                 return even.Teams.Select(x => x.GetClientTeam()).ToList();
             } else {
@@ -107,6 +108,19 @@ namespace ScoutingServer.Controllers {
                     .FirstOrDefault();
             }
             if(even != null) {
+                var teams = (await refresher.GetEvent(request.Year, request.EventCode)).Teams;
+                foreach(var team in teams) {
+                    TeamController.GetTeam(team.TeamNumber, context, team);
+                    if(context.TeamEvents.Any(m => m.EventId == even.EventId && m.TeamNumber == team.TeamNumber)) {
+                        TeamEvent et = new TeamEvent() {
+                            Event = even,
+                            Team = new SQLDataObjects.Team(team)
+                        };
+                        context.TeamEvents.Add(et);
+                    }
+                }
+                context.SaveChanges();
+
                 if(matchs != null) {
                     var matcheses = context.Matches.Where(x => x.EventId == even.EventId).ToList();
                     foreach(var match in matcheses) {
@@ -121,7 +135,6 @@ namespace ScoutingServer.Controllers {
                 }
                 
                 context.SaveChanges();
-                //System.Diagnostics.Trace.TraceError("bwoasdtch");
                 if(even.Matchs != null) {
                     return even.Matchs.Select(x => x.GetClientMatch()).ToList();
                 } else {

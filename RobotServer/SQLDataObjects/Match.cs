@@ -13,6 +13,7 @@ namespace RobotServer.SQLDataObjects
         public string MatchInfo { get; set; }
         public string EventId { get; set; }
         public Event Event { get; set; }
+        public string Time { get; set; }
         public List<RobotEvent> RobotEvents { get; set; }
         public List<Performance> Performances { get; set; }
 
@@ -24,6 +25,7 @@ namespace RobotServer.SQLDataObjects
             MatchId = match.Key;
             MatchInfo = match.MatchInfo();
             EventId = match.Event.Key;
+            Time = match.MatchInfo();
         }
 
         public ClientMatch GetClientMatch() {

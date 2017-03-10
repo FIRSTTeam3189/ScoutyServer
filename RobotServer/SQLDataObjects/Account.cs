@@ -2,10 +2,6 @@
 
 namespace RobotServer.SQLDataObjects {
     public class Account  {
-        public const int ROLE_LEVEL_USER = 0;
-        public const int ROLE_LEVEL_MOD = 1;
-        public const int ROLE_LEVEL_ADMIN = 2;
-        public const int ROLE_LEVEL_DEV = 3;
 
         public Account() {
 
@@ -13,8 +9,6 @@ namespace RobotServer.SQLDataObjects {
 
         public Account(string Id) : base() {
             this.Id = Id;
-            Security = null;
-            AuthLevel = Account.ROLE_LEVEL_DEV;
         }
 
         public ClientAccount GetClientAccount() {
@@ -30,19 +24,8 @@ namespace RobotServer.SQLDataObjects {
         public string Username { get; set; }
         public string RealName { get; set; }
         public string TeamNumber { get; set; }
-        public int AuthLevel { get; set; }
-        public virtual AccountSecurity Security { get; set; }
-        public bool IsModLevel() {
-            return AuthLevel >= ROLE_LEVEL_MOD;
-        }
-
-        public bool IsAdminLevel() {
-            return AuthLevel >= ROLE_LEVEL_ADMIN;
-        }
-
-        public bool IsDevLevel() {
-            return AuthLevel >= ROLE_LEVEL_DEV;
-        }
+        public byte[] Salt { get; set; }
+        public byte[] SaltedAndHashedPassword { get; set; }
 
         public static bool operator ==(Account a, Account b) {
             if(a != null && b != null) {

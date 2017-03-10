@@ -2,13 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using RobotServer.SQLDataObjects;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace RobotServer.Models
 {
-    public class RoboContext : DbContext {        
+    public class RoboContext : IdentityDbContext {        
 
         public DbSet<Account> Accounts { get; set; }
-        public DbSet<AccountSecurity> AccountSecurities { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<RobotEvent> RobotEvents { get; set; }

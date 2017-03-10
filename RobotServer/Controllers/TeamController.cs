@@ -14,6 +14,7 @@ using RobotServer.Models;
 using Microsoft.AspNetCore.Authorization;
 using RobotServer.ClientData;
 using RobotServer.Interfaces;
+using BlueAllianceClient;
 
 namespace ScoutingServer.Controllers {
 
@@ -32,19 +33,21 @@ namespace ScoutingServer.Controllers {
         [ActionName("GetTeam")]
         [AllowAnonymous]
         [HttpPost]
-        public async Task<ClientTeam> GetTeam(TeamInfoRequest request) {
-            return (await GetTeam(request.TeamNumber, context)).GetClientTeam();
+        public ClientTeam GetTeam(TeamInfoRequest request) {
+            return (GetTeam(request.TeamNumber, context)).GetClientTeam();
         }
 
-        public static async Task<Team> GetTeam(int TeamNumber, RoboContext context) {
+        public static Team GetTeam(int TeamNumber, RoboContext context) {
+
+            return context.Teams.FirstOrDefault(a => a.TeamNumber == TeamNumber);
+        }
+
+        public static Team GetTeam(int TeamNumber, RoboContext context, BATeam Default) {
 
             Team team = context.Teams.FirstOrDefault(a => a.TeamNumber == TeamNumber);
 
             if(team == null) {
-
-                BlueAllianceClient client = new BlueAllianceClient();
-
-                team = await client.GetTeam(TeamNumber);
+                team = new Team(Default);
                 if(team != null) {
                     context.Teams.Add(team);
                     context.SaveChanges();

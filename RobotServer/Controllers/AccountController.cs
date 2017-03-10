@@ -15,9 +15,16 @@ using Microsoft.Extensions.Logging;
 using RobotServer.Interfaces;
 using RobotServer.SQLDataObjects;
 using RobotServer.ClientData;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Web.Http;
+using AspNet.Security.OpenIdConnect.Server;
+using AspNet.Security.OpenIdConnect.Primitives;
+using AspNet.Security.OpenIdConnect.Extensions;
+using Microsoft.AspNetCore.Http;
 
 namespace ScoutingServer.Controllers {
-    
+
     [Route("api/[Controller]")]
     public class AccountController : Controller {
         public const int MIN_PASSWORD_LENGTH = 8;
@@ -36,24 +43,18 @@ namespace ScoutingServer.Controllers {
         [HttpPost]
         public HttpResponseMessage CustomRegister(CustomRegistrationRequest request) {
             string error = null;
-            //RegisterCheck(request.Username, request.Password);
+            RegisterCheck(request.Username, request.Password);
             if(error != null) {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
             } else {
                 byte[] salt = CustomLoginProviderUtils.generateSalt();
                 string guid = Guid.NewGuid().ToString();
-
-                AccountSecurity newAccountSecurity = new AccountSecurity {
-                    Id = guid,
-                    Salt = salt,
-                    SaltedAndHashedPassword = CustomLoginProviderUtils.hash(request.Password, salt)
-                };
-                context.AccountSecurities.Add(newAccountSecurity);
                 context.SaveChanges();
 
                 Account newAccount = new Account(guid) {
                     Username = request.Username,
-                    Security = newAccountSecurity
+                    Salt = salt,
+                    SaltedAndHashedPassword = CustomLoginProviderUtils.hash(request.Password, salt)
                 };
 
                 context.Accounts.Add(newAccount);
@@ -101,15 +102,15 @@ namespace ScoutingServer.Controllers {
                     return new HttpResponseMessage(HttpStatusCode.BadRequest);
                 }
             }
-        }
+        }*/
 
-        public static string RegisterCheck(string username, string password) {
+        public string RegisterCheck(string username, string password) {
             if(username.Length >= 4 && username.Length <= 16 && !Regex.IsMatch(username, "^[a-zA-Z0-9]{4,}$")) {
                 return "Invalid username (at least 4 chars and less than 16, alphanumeric only)";
             } else if(password != null && password.Length <= MIN_PASSWORD_LENGTH && password.Length >= MAX_PASSWORD_LENGTH) {
                 return "Invalid password (at least 8 and less than 128 chars required)";
             }
-            MobileServiceContext context = new MobileServiceContext();
+
             Account account = context.Accounts.Where(a => a.Username == username).FirstOrDefault();
             if(account != null) {
                 if(!string.IsNullOrWhiteSpace(account.Username) && account.Username == username) {
@@ -124,32 +125,57 @@ namespace ScoutingServer.Controllers {
         [ActionName("Login")]
         [AllowAnonymous]
         [HttpPost]
-        public LoginInfo Login(LoginRequest request) {
+        public IActionResult Login(LoginRequest request) {
             if(!Regex.IsMatch(request.Username, "^[a-zA-Z0-9]{4,}$")) {
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
-            if(!IsPasswordValid(request.Username, request.Password)) {
+            if(!IsPasswordValid(request.Username, request.Password))
                 throw new HttpResponseException(HttpStatusCode.Unauthorized);
-            }
-            MobileServiceContext context = new MobileServiceContext();
 
-            var info = context.Accounts.Where(a => a.Username == request.Username).FirstOrDefault();
+            var info = context.Accounts.FirstOrDefault(d => d.Username.ToLower() == request.Username.ToLower());
 
-            JwtSecurityToken token = GetAuthenticationTokenForUser(info.Id);
+            if(info == null)
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-            var customLoginResult = new LoginInfo() {
-                UserId = info.Id,
-                MobileServiceAuthenticationToken = token.RawData,
-                AccountInfo = info.GetClientAccount()
-            };
+            byte[] incoming = CustomLoginProviderUtils.hash(request.Password, info.Salt);
 
-            return customLoginResult;
+            if(!CustomLoginProviderUtils.slowEquals(incoming, info.SaltedAndHashedPassword))
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+
+            var temp = new ClaimsIdentity(new GenericIdentity(request.Username, "Token"), new Claim[] { });
+
+            var identity = new ClaimsIdentity(
+                OpenIdConnectServerDefaults.AuthenticationScheme,
+                OpenIdConnectConstants.Claims.Name, null);
+
+            identity.AddClaim(OpenIdConnectConstants.Claims.Subject,
+                Guid.NewGuid().ToString(),
+                OpenIdConnectConstants.Destinations.AccessToken);
+
+            identity.AddClaim(OpenIdConnectConstants.Claims.Name, info.Username,
+                OpenIdConnectConstants.Destinations.AccessToken);
+            var principal = new ClaimsPrincipal(identity);
+            // Ask OpenIddict to generate a new token and return an OAuth2 token response.
+//            {
+//                "access_token"  : "...",
+//                "token_type"    : "...",
+//                "expires_in"    : "...",
+//                "refresh_token" : "...",
+//            }
+            return SignIn(principal, OpenIdConnectServerDefaults.AuthenticationScheme);
+        }
+
+        [Route("Logout")]
+        [ActionName("Logout")]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult Logout(LoginRequest request) {
+            return SignOut();
         }
 
         private bool IsPasswordValid(string username, string password) {
-            MobileServiceContext context = new MobileServiceContext();
-            var security = context.Accounts.FirstOrDefault(a => a.Username == username)?.Security;
+            var security = context.Accounts.FirstOrDefault(a => a.Username == username);
             if(security != null) {
                 byte[] incoming = CustomLoginProviderUtils.hash(password, security.Salt);
                 if(CustomLoginProviderUtils.slowEquals(incoming, security.SaltedAndHashedPassword)) {
@@ -159,47 +185,11 @@ namespace ScoutingServer.Controllers {
             return false;
         }
 
-        [Route("IsRegistered")]
-        [ActionName("IsRegistered")]
-        [Authorize]
-        [HttpPost]
-        public bool IsUserRegistered() {
-            MobileServiceContext context = new MobileServiceContext();
-            var result = context.Accounts.Where(a => a.Id == User.Identity.GetUserId()).SingleOrDefault();
-            if(result != null || string.IsNullOrWhiteSpace(result.Id)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        private JwtSecurityToken GetAuthenticationTokenForUser(string id) {
-            var claims = new Claim[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, id)
-            };
-
-            var signingKey = this.GetSigningKey();
-            var audience = this.GetSiteUrl(); // audience must match the url of the site
-            var issuer = this.GetSiteUrl(); // audience must match the url of the site 
-
-            JwtSecurityToken token = AppServiceLoginHandler.CreateToken(
-                claims,
-                signingKey,
-                audience,
-                issuer,
-                TimeSpan.FromHours(24)
-                );
-
-            return token;
-        }
-
         [Authorize]
         [Route("GetMyAccount")]
         [ActionName("GetMyAccount")]
         [HttpPost]
         public async Task<ClientAccount> GetMyAccount() {
-            MobileServiceContext context = new MobileServiceContext();
             return (await GetAccount(context, User, Request)).GetClientAccount();
         }
 
@@ -208,8 +198,7 @@ namespace ScoutingServer.Controllers {
         [ActionName("GetAccountInfo")]
         [HttpPost]
         public ClientAccount GetAccount(string username) {
-            MobileServiceContext context = new MobileServiceContext();
-            return context.Accounts.Where(a => a.Username == username).SingleOrDefault().GetClientAccount();
+            return context.Accounts.FirstOrDefault(a => a.Username == username).GetClientAccount();
         }
 
         [Authorize]
@@ -217,7 +206,6 @@ namespace ScoutingServer.Controllers {
         [ActionName("GetAccountInfos")]
         [HttpPost]
         public List<ClientAccount> GetAccount(IList<string> id) {
-            MobileServiceContext context = new MobileServiceContext();
             foreach(var i in id) {
             }
             var results = context.Accounts.Where(a => id.Contains(a.Id)).ToList().GetClientList(context);
@@ -229,13 +217,12 @@ namespace ScoutingServer.Controllers {
         [ActionName("UsernameExists")]
         [HttpPost]
         public HttpResponseMessage UsernameExists(string un) {
-            MobileServiceContext context = new MobileServiceContext();
             var thing = context.Accounts.Where(a => a.Username == un).SingleOrDefault();
             if(thing != null && thing.Id != null) {
-                return Request.CreateResponse(HttpStatusCode.Found);
+                return new HttpResponseMessage(HttpStatusCode.Found);
             }
-            return Request.CreateResponse(HttpStatusCode.Unused);
-        }*/
+            return new HttpResponseMessage(HttpStatusCode.Unused);
+        }
 
         /*[Authorize]
         [Route("ChangeRole")]
@@ -277,19 +264,19 @@ namespace ScoutingServer.Controllers {
                 return -1;
             }
         }*/
-        /*
-        public static async Task<Account> GetAccount(MobileServiceContext context, IPrincipal User, HttpRequestMessage Request) {
+
+        public static async Task<Account> GetAccount(RoboContext context, IPrincipal User, HttpRequest Request) {
             ClaimsPrincipal principal = User as ClaimsPrincipal;
             string provider = principal.FindFirst("http://schemas.microsoft.com/identity/claims/identityprovider")?.Value;
 
-            ProviderCredentials creds = null;
+            //ProviderCredentials creds = null;
             string UserId;
-            Account account;
+            Account account = null;
 
             if(string.IsNullOrWhiteSpace(provider)) {
                 UserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 account = context.Accounts.SingleOrDefault(a => a.Id == UserId);
-            } else {
+            }/* else {
                 if(string.Equals(provider, "facebook", StringComparison.OrdinalIgnoreCase)) {
                     creds = await User.GetAppServiceIdentityAsync<FacebookCredentials>(Request);
                 } else if(string.Equals(provider, "google", StringComparison.OrdinalIgnoreCase)) {
@@ -301,7 +288,7 @@ namespace ScoutingServer.Controllers {
                 }
                 UserId = string.Format("{0}:{1}", creds.Provider, creds.Claims[ClaimTypes.NameIdentifier]);
                 account = context.Accounts.SingleOrDefault(a => a.Id == UserId);
-            }
+            }*/
 
             if(account == null) {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -309,7 +296,7 @@ namespace ScoutingServer.Controllers {
             return account;
         }
 
-        private string GetSiteUrl() {
+        /*private string GetSiteUrl() {
             var settings = this.Configuration.GetMobileAppSettingsProvider().GetMobileAppSettings();
 
             if(string.IsNullOrEmpty(settings.HostName)) {
@@ -317,8 +304,8 @@ namespace ScoutingServer.Controllers {
             } else {
                 return "https://" + settings.HostName + "/";
             }
-        }
-
+        }*/
+        /*
         private string GetSigningKey() {
             var settings = this.Configuration.GetMobileAppSettingsProvider().GetMobileAppSettings();
 

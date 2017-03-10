@@ -10,7 +10,7 @@ namespace RobotServer.Models
     {
         public static bool Contains(this List<Event> events, Event e)
         {
-            return events.Any(ev => e.Id == ev.Id);
+            return events.Any(ev => e.EventId == ev.EventId);
         }
     }
 }
