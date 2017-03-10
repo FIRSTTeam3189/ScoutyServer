@@ -22,7 +22,6 @@ namespace RobotServer.Models
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
-            base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<TeamEvent>().HasOne<Team>(t => t.Team).WithMany(t => t.Events).HasForeignKey(t => t.TeamNumber);
             modelBuilder.Entity<TeamEvent>().HasOne<Event>(e => e.Event).WithMany(e => e.TeamEvents).HasForeignKey(e => e.EventId);
@@ -44,9 +43,12 @@ namespace RobotServer.Models
             Matches.Include(l => l.Performances);
             Teams.Include(x => x.Performances);
 
+
+            base.OnModelCreating(modelBuilder);
         }
 
         public static void Init(RoboContext context) {
+            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
         }
     }
