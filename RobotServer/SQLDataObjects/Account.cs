@@ -1,4 +1,5 @@
 ﻿using RobotServer.ClientData;
+using System.Collections.Generic;
 
 namespace RobotServer.SQLDataObjects {
     public class Account  {
@@ -24,6 +25,7 @@ namespace RobotServer.SQLDataObjects {
         public string Username { get; set; }
         public string RealName { get; set; }
         public string TeamNumber { get; set; }
+        public List<RobotEvent> RobotEvents { get; set; }
         public byte[] Salt { get; set; }
         public byte[] SaltedAndHashedPassword { get; set; }
 

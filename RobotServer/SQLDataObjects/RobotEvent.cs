@@ -3,13 +3,16 @@ using ScoutingServer.SQLDataObjects;
 
 namespace RobotServer.SQLDataObjects {
     public class RobotEvent {
+        public string RobotEventId { get; set; }
         public int TeamNumber { get; set; }
-        public int MatchId { get; set; }
+        public string MatchId { get; set; }
         public Match Match { get; set; }
         public Team Team { get; set; }
         public ActionType Action { get; set; }
         public ActionPeriod Period { get; set; }
         public int Time { get; set; }
+        public string PosterId { get; set; }
+        public Account Poster { get; set; }
 
         public ClientRobotEvent getClient() {
             return new ClientRobotEvent() {
@@ -18,6 +21,17 @@ namespace RobotServer.SQLDataObjects {
                 Period = Period,
                 TeamId = TeamNumber,
                 Time = Time
+            };
+        }
+
+        public static RobotEvent FromClient(ClientRobotEvent re, string posterId = "Unknown") {
+            return new RobotEvent() {
+                Action = re.Action,
+                MatchId = re.MatchId,
+                Period = re.Period,
+                PosterId = posterId,
+                TeamNumber = re.TeamId,
+                Time = re.Time
             };
         }
     }
