@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using RobotServer.SQLDataObjects;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System;
+using ScoutingServer.Models;
 
 namespace RobotServer.Models
 {
@@ -43,7 +45,7 @@ namespace RobotServer.Models
             //Matches.Include(l => l.Performances);
             //Teams.Include(x => x.Performances);
 
-            modelBuilder.Entity<RobotEvent>().HasOne<Account>(i => i.Poster).WithMany(q => q.RobotEvents).HasForeignKey(b => b.PosterId);
+            //modelBuilder.Entity<RobotEvent>().HasOne<Account>(i => i.Poster).WithMany(q => q.RobotEvents).HasForeignKey(b => b.PosterId);
             //RobotEvents.Include(u => u.Poster);
             //Accounts.Include(o => o.RobotEvents);
 
@@ -51,7 +53,7 @@ namespace RobotServer.Models
         }
 
         public static void Init(RoboContext context) {
-            context.Database.EnsureDeleted();
+            //context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
         }
     }

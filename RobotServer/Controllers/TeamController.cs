@@ -44,7 +44,7 @@ namespace ScoutingServer.Controllers {
 
         public static Team GetTeam(int TeamNumber, RoboContext context, BATeam Default) {
 
-            Team team = context.Teams.FirstOrDefault(a => a.TeamNumber == TeamNumber);
+            Team team = context.Teams.Where(a => a.TeamNumber == TeamNumber).ToList().FirstOrDefault();
 
             if(team == null) {
                 team = new Team(Default);

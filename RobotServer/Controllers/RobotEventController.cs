@@ -10,9 +10,11 @@ using System.Net.Http;
 using RobotServer.ClientData;
 using RobotServer.SQLDataObjects;
 using ScoutingServer.Controllers;
+using System.Web.Http;
 
 namespace RobotServer.Controllers
 {
+    [Route("api/[Controller]")]
     public class RobotEventController : Controller {
         private readonly RoboContext context;
         private readonly ILogger logger;
@@ -24,14 +26,16 @@ namespace RobotServer.Controllers
 
         [Route("Post")]
         [ActionName("Post")]
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> PostRobotEvents(List<ClientRobotEvent> request) {
-            var user = await AccountController.GetAccount(context, User, Request);
+        public async Task<IActionResult> PostRobotEvents([FromBody] List<ClientRobotEvent> request) {
+            //var user = await AccountController.GetAccount(context, User, Request);
+            if(!request.Any())
+                throw new HttpResponseException(System.Net.HttpStatusCode.NoContent);
 
             foreach(var r in request) {
-                if(context.RobotEvents.Any(y => y.MatchId == r.MatchId && y.PosterId != user.Id)) {
-                    context.RobotEvents.Add(RobotEvent.FromClient(r, user.Id));
+                if(context.RobotEvents.Any(y => y.MatchId == r.MatchId)) {
+                    context.RobotEvents.Add(RobotEvent.FromClient(r));
                 }
             }
 
@@ -42,9 +46,9 @@ namespace RobotServer.Controllers
 
         [Route("GetTeamStats")]
         [ActionName("GetTeamStats")]
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> PostRobotEvents() {
+        public async Task<IActionResult> GetTeamStats() {
             //TODO DO SOMETHING HERE
 
             return Ok();

@@ -15,17 +15,21 @@ namespace RobotServer.ClientData {
     }
 
     public enum ActionType {
+        Mobility,
         MakeHigh,
         MakeLow,
         MissHigh,
         MissLow,
         GearCollected,
+        GearPickedUp,
         GearDropped,
         GearHung,
         ClimbAttempted,
         ClimbSuccessful,
         RobotDisabled,
-        SpilledBalls
+        SpilledBalls,
+        Foul,
+        TechnicalFoul
     }
 
     public enum ActionPeriod {

@@ -3,6 +3,7 @@ using ScoutingServer.SQLDataObjects;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace RobotServer.SQLDataObjects
 {
@@ -20,12 +21,28 @@ namespace RobotServer.SQLDataObjects
         public List<Match> Matchs { get; set; }
         public int Week { get; set; }
 
+        public Event() {
+
+        }
+
         public Event(BAEvent ev) {
             EventId = ev.Key;
             Name = ev.Name;
             EventCode = ev.EventCode;
             Location = ev.Location;
             Week = Week;
+
+            if(ev.Teams != null) {
+                TeamEvents = ev.Teams.Select(x => new TeamEvent() {
+                    EventId = this.EventId,
+                    TeamNumber = x.TeamNumber
+                }).ToList();
+                Teams = ev.Teams.Select(x => new Team(x)).ToList();
+            }
+
+            if(ev.Matches != null) {
+                Matchs = ev.Matches.Select(x => new Match(x)).ToList();
+            }
         }
 
         public int GetYear() {

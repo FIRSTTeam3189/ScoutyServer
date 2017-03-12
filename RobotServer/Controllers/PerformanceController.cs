@@ -28,7 +28,7 @@ namespace ScoutingServer.Controllers {
 
         [Route("GetPerformances")]
         [ActionName("GetPerformances")]
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet]
         public List<ClientPerformance> GetPerformances(string EventCode) {
             return context.Performances.Where(x => x.Match.Event.EventCode == EventCode).ToList().Select(x => x.getClient()).ToList();

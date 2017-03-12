@@ -41,7 +41,7 @@ namespace ScoutingServer.Controllers {
         [ActionName("CustomRegister")]
         [AllowAnonymous]
         [HttpPost]
-        public HttpResponseMessage CustomRegister(CustomRegistrationRequest request) {
+        public HttpResponseMessage CustomRegister([FromBody]CustomRegistrationRequest request) {
             string error = null;
             RegisterCheck(request.Username, request.Password);
             if(error != null) {
@@ -49,9 +49,8 @@ namespace ScoutingServer.Controllers {
             } else {
                 byte[] salt = CustomLoginProviderUtils.generateSalt();
                 string guid = Guid.NewGuid().ToString();
-                context.SaveChanges();
 
-                Account newAccount = new Account(guid) {
+                Account newAccount = new Account() {
                     Username = request.Username,
                     Salt = salt,
                     SaltedAndHashedPassword = CustomLoginProviderUtils.hash(request.Password, salt)
@@ -111,7 +110,7 @@ namespace ScoutingServer.Controllers {
                 return "Invalid password (at least 8 and less than 128 chars required)";
             }
 
-            Account account = context.Accounts.Where(a => a.Username == username).FirstOrDefault();
+            Account account = context.Accounts.FirstOrDefault(a => a.Username == username);
             if(account != null) {
                 if(!string.IsNullOrWhiteSpace(account.Username) && account.Username == username) {
                     return "That username already exists.";
@@ -125,7 +124,8 @@ namespace ScoutingServer.Controllers {
         [ActionName("Login")]
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult Login(LoginRequest request) {
+        public IActionResult Login([FromBody]LoginRequest request) {
+            logger.LogError($"{request.Username} : {request.Password}");
             if(!Regex.IsMatch(request.Username, "^[a-zA-Z0-9]{4,}$")) {
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
@@ -133,7 +133,9 @@ namespace ScoutingServer.Controllers {
             if(!IsPasswordValid(request.Username, request.Password))
                 throw new HttpResponseException(HttpStatusCode.Unauthorized);
 
-            var info = context.Accounts.FirstOrDefault(d => d.Username.ToLower() == request.Username.ToLower());
+            logger.LogError("It authed");
+
+            var info = context.Accounts.Where(a => a.Username == request.Username).ToList().FirstOrDefault();
 
             if(info == null)
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
@@ -150,7 +152,7 @@ namespace ScoutingServer.Controllers {
                 OpenIdConnectConstants.Claims.Name, null);
 
             identity.AddClaim(OpenIdConnectConstants.Claims.Subject,
-                Guid.NewGuid().ToString(),
+                info.Username,
                 OpenIdConnectConstants.Destinations.AccessToken);
 
             identity.AddClaim(OpenIdConnectConstants.Claims.Name, info.Username,
@@ -175,7 +177,7 @@ namespace ScoutingServer.Controllers {
         }
 
         private bool IsPasswordValid(string username, string password) {
-            var security = context.Accounts.FirstOrDefault(a => a.Username == username);
+            var security = context.Accounts.Where(a => a.Username == username).ToList().FirstOrDefault();
             if(security != null) {
                 byte[] incoming = CustomLoginProviderUtils.hash(password, security.Salt);
                 if(CustomLoginProviderUtils.slowEquals(incoming, security.SaltedAndHashedPassword)) {
@@ -208,7 +210,7 @@ namespace ScoutingServer.Controllers {
         public List<ClientAccount> GetAccount(IList<string> id) {
             foreach(var i in id) {
             }
-            var results = context.Accounts.Where(a => id.Contains(a.Id)).ToList().GetClientList(context);
+            var results = context.Accounts.Where(a => id.Contains(a.Username)).ToList().GetClientList(context);
             return results;
         }
 
@@ -218,7 +220,7 @@ namespace ScoutingServer.Controllers {
         [HttpPost]
         public HttpResponseMessage UsernameExists(string un) {
             var thing = context.Accounts.Where(a => a.Username == un).SingleOrDefault();
-            if(thing != null && thing.Id != null) {
+            if(thing != null && thing.Username != null) {
                 return new HttpResponseMessage(HttpStatusCode.Found);
             }
             return new HttpResponseMessage(HttpStatusCode.Unused);
@@ -275,7 +277,7 @@ namespace ScoutingServer.Controllers {
 
             if(string.IsNullOrWhiteSpace(provider)) {
                 UserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                account = context.Accounts.SingleOrDefault(a => a.Id == UserId);
+                account = context.Accounts.SingleOrDefault(a => a.Username == UserId);
             }/* else {
                 if(string.Equals(provider, "facebook", StringComparison.OrdinalIgnoreCase)) {
                     creds = await User.GetAppServiceIdentityAsync<FacebookCredentials>(Request);
@@ -322,7 +324,6 @@ namespace ScoutingServer.Controllers {
 
             return (from person in me
                     select new ClientAccount() {
-                        Id = person.Id,
                         Username = person.Username,
                         RealName = person.RealName,
                         TeamNumber = person.TeamNumber

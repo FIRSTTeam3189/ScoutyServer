@@ -26,11 +26,11 @@ namespace BlueAllianceClient
 		}
 
 		public async Task<BAEvent> GetEvent(int year, string eventCode) {
-			var ev = await Connection.GetAsync<BAEvent>($"/api/v2/event/{year}{eventCode}");
+			var ev = await Connection.GetAsync<BAEvent>($"api/v2/event/{year}{eventCode}");
 
 			// Now pull down all of the matches as JToken, and Teams too
-			var rawMatches = await Connection.GetJArrayAsync($"/api/v2/event/{year}{eventCode}/matches");
-			var teams = await Connection.GetAsync<List<BATeam>>($"/api/v2/event/{year}{eventCode}/teams");
+			var rawMatches = await Connection.GetJArrayAsync($"api/v2/event/{year}{eventCode}/matches");
+			var teams = await Connection.GetAsync<List<BATeam>>($"api/v2/event/{year}{eventCode}/teams");
 
 			// Select all that we want from Matches
 			var matches = rawMatches.Select(x => {
