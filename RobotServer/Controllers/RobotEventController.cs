@@ -31,13 +31,9 @@ namespace RobotServer.Controllers
         public async Task<IActionResult> PostRobotEvents([FromBody] List<ClientRobotEvent> request) {
             //var user = await AccountController.GetAccount(context, User, Request);
             if(!request.Any())
-                throw new HttpResponseException(System.Net.HttpStatusCode.NoContent);
+                throw new HttpResponseException(System.Net.HttpStatusCode.NoContent);              
 
-            foreach(var r in request) {
-                if(context.RobotEvents.Any(y => y.MatchId == r.MatchId)) {
-                    context.RobotEvents.Add(RobotEvent.FromClient(r));
-                }
-            }
+            context.RobotEvents.AddRange(request.Select(r => RobotEvent.FromClient(r)));
 
             context.SaveChanges();
 

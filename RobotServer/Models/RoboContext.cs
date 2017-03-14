@@ -18,6 +18,7 @@ namespace RobotServer.Models
         public DbSet<Performance> Performances { get; set; }
 
         public DbSet<TeamEvent> TeamEvents { get; set; }
+        public DbSet<Note> Notes { get; set; }
 
         public RoboContext(DbContextOptions<RoboContext> options) : base(options) {
 
@@ -55,6 +56,15 @@ namespace RobotServer.Models
         public static void Init(RoboContext context) {
             //context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
+            var salt = CustomLoginProviderUtils.generateSalt();
+            /*context.Accounts.Add(new Account() {
+                RealName = "Dev",
+                Username = "DevBo",
+                TeamNumber = 3189,
+                Salt = salt,
+                SaltedAndHashedPassword = CustomLoginProviderUtils.hash("devaregod", salt)
+            });
+            context.SaveChanges();*/
         }
     }
 

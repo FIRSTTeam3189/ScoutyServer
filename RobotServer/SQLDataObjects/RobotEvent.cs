@@ -11,7 +11,6 @@ namespace RobotServer.SQLDataObjects {
         public ActionType Action { get; set; }
         public ActionPeriod Period { get; set; }
         public int Time { get; set; }
-        public string PosterId { get; set; }
         public Account Poster { get; set; }
 
         public ClientRobotEvent getClient() {
@@ -24,14 +23,12 @@ namespace RobotServer.SQLDataObjects {
             };
         }
 
-        public static RobotEvent FromClient(ClientRobotEvent re, string posterId = "Unknown") {
+        public static RobotEvent FromClient(ClientRobotEvent re) {
             return new RobotEvent() {
                 Action = re.Action,
                 MatchId = re.MatchId,
                 Period = re.Period,
-                PosterId = posterId,
-                TeamNumber = re.TeamId,
-                Time = re.Time
+                TeamNumber = re.TeamId
             };
         }
     }

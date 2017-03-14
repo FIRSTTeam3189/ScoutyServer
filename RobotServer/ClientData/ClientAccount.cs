@@ -4,6 +4,6 @@ namespace RobotServer.ClientData {
         
         public string Username { get; set; }
         public string RealName { get; set; }
-        public string TeamNumber { get; set; }
+        public int TeamNumber { get; set; }
     }
 }

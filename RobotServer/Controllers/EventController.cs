@@ -130,11 +130,11 @@ namespace ScoutingServer.Controllers {
                 var notHereTeams = baEv.Teams.Where(x => !existEvent.Teams.Contains(x)).ToList();
                 if(notHereTeams.Count != 0) {
                     // See if team is already in DB
-                    foreach(var t in notHereTeams.Select(x => x))
-                        if(!(await context.Teams.ContainsAsync(t)))
+                    foreach(var t in notHereTeams)
+                        if(!(await context.Teams.ContainsAsync(t))) {
                             await context.Teams.AddAsync(t);
-
-                    existEvent.TeamEvents.AddRange(notHereTeams.Select(x => new TeamEvent(x, existEvent)));
+                            existEvent.TeamEvents.Add(new TeamEvent(t, existEvent));
+                        }
                 }
                 existEvent.Matchs.AddRange(baEv.Matchs.Where(x => !existEvent.Matchs.Contains(x)));
                 context.Events.Update(existEvent);
