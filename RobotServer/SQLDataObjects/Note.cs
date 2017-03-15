@@ -15,6 +15,7 @@ namespace RobotServer.SQLDataObjects
         public ExLevel DriverEx { get; set; }
         public ExLevel CoDriverEx { get; set; }
         public ExLevel CoachEx { get; set; }
+        public ExLevel HumanPlayer { get; set; }
         public int ExpectedGears { get; set; }
         public int ExpectedBalls { get; set; }
         public string Notes { get; set; }

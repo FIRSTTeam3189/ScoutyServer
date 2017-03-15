@@ -1,9 +1,10 @@
 ﻿using RobotServer.ClientData;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace RobotServer.SQLDataObjects {
-    public class Account  {
+    public class Account : IdentityUser{
 
         public Account() {
 
@@ -16,24 +17,22 @@ namespace RobotServer.SQLDataObjects {
         public ClientAccount GetClientAccount() {
             return new ClientAccount {
                 //Id = Id,
-                Username = Username,
+                Username = UserName,
                 TeamNumber = TeamNumber,
                 RealName = RealName
             };
         }
 
         //public string Id { get; set; }
-        [Key]
-        public string Username { get; set; }
         public string RealName { get; set; }
         public int TeamNumber { get; set; }
         //public List<RobotEvent> RobotEvents { get; set; }
         public byte[] Salt { get; set; }
-        public byte[] SaltedAndHashedPassword { get; set; }
+        //public byte[] SaltedAndHashedPassword { get; set; }
 
         public static bool operator ==(Account a, Account b) {
             if(a != null && b != null) {
-                return a.Username == b.Username;
+                return a.UserName == b.UserName;
             } else if(a == null && b == null) {
                 return true;
             }
@@ -46,12 +45,12 @@ namespace RobotServer.SQLDataObjects {
 
         public override bool Equals(object obj) {
             if(obj is Account)
-                return (obj as Account).Username == Username;
+                return (obj as Account).UserName == UserName;
             return false;
         }
 
         public override int GetHashCode() {
-            return Username.GetHashCode();
+            return UserName.GetHashCode();
         }
     }
 }

@@ -22,6 +22,7 @@ using AspNet.Security.OpenIdConnect.Server;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AspNet.Security.OpenIdConnect.Extensions;
 using Microsoft.AspNetCore.Http;
+using NUglify.Helpers;
 
 namespace ScoutingServer.Controllers {
 
@@ -43,17 +44,17 @@ namespace ScoutingServer.Controllers {
         [HttpPost]
         public HttpResponseMessage CustomRegister([FromBody]CustomRegistrationRequest request) {
             string error = null;
-            RegisterCheck(request.Username, request.Password);
-            if(error != null) {
+            error = RegisterCheck(request.Username, request.Password);
+            if(error.IsNullOrWhiteSpace()) {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
             } else {
                 byte[] salt = CustomLoginProviderUtils.generateSalt();
                 string guid = Guid.NewGuid().ToString();
 
                 Account newAccount = new Account() {
-                    Username = request.Username,
+                    UserName = request.Username,
                     Salt = salt,
-                    SaltedAndHashedPassword = CustomLoginProviderUtils.hash(request.Password, salt)
+                    PasswordHash = Encoding.ASCII.GetString(CustomLoginProviderUtils.hash(request.Password, salt))
                 };
 
                 context.Accounts.Add(newAccount);
@@ -68,7 +69,7 @@ namespace ScoutingServer.Controllers {
         [Authorize]
         [HttpPost]
         public async Task<HttpResponseMessage> Register(RegistrationRequest request) {
-            string error = RegisterCheck(request.Username, null);
+            string error = RegisterCheck(request.UserName, null);
             if(error != null) {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
             } else {
@@ -91,7 +92,7 @@ namespace ScoutingServer.Controllers {
 
                 if(GodDamnFuckingId != null) {
                     Account newAccount = new Account(GodDamnFuckingId) {
-                        Username = request.Username,
+                        UserName = request.UserName,
                     };
                     context.Accounts.Add(newAccount);
                     context.SaveChanges();
@@ -103,17 +104,17 @@ namespace ScoutingServer.Controllers {
             }
         }*/
 
-        public string RegisterCheck(string username, string password) {
-            if(username.Length >= 4 && username.Length <= 16 && !Regex.IsMatch(username, "^[a-zA-Z0-9]{4,}$")) {
-                return "Invalid username (at least 4 chars and less than 16, alphanumeric only)";
+        public string RegisterCheck(string UserName, string password) {
+            if(UserName.Length >= 4 && UserName.Length <= 16 && !Regex.IsMatch(UserName, "^[a-zA-Z0-9]{4,}$")) {
+                return "Invalid UserName (at least 4 chars and less than 16, alphanumeric only)";
             } else if(password != null && password.Length <= MIN_PASSWORD_LENGTH && password.Length >= MAX_PASSWORD_LENGTH) {
                 return "Invalid password (at least 8 and less than 128 chars required)";
             }
 
-            Account account = context.Accounts.FirstOrDefault(a => a.Username == username);
+            Account account = context.Accounts.FirstOrDefault(a => a.UserName == UserName);
             if(account != null) {
-                if(!string.IsNullOrWhiteSpace(account.Username) && account.Username == username) {
-                    return "That username already exists.";
+                if(!string.IsNullOrWhiteSpace(account.UserName) && account.UserName == UserName) {
+                    return "That UserName already exists.";
                 }
                 //TODO fix the commented code.
             }
@@ -129,33 +130,21 @@ namespace ScoutingServer.Controllers {
             if(!Regex.IsMatch(request.Username, "^[a-zA-Z0-9]{4,}$")) {
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
-
-            if(!IsPasswordValid(request.Username, request.Password))
+            var info = IsPasswordValid(request.Username, request.Password);
+            if(info == null)
                 throw new HttpResponseException(HttpStatusCode.Unauthorized);
 
             logger.LogError("It authed");
-
-            var info = context.Accounts.Where(a => a.Username == request.Username).ToList().FirstOrDefault();
-
-            if(info == null)
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-
-            byte[] incoming = CustomLoginProviderUtils.hash(request.Password, info.Salt);
-
-            if(!CustomLoginProviderUtils.slowEquals(incoming, info.SaltedAndHashedPassword))
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-
-            var temp = new ClaimsIdentity(new GenericIdentity(request.Username, "Token"), new Claim[] { });
 
             var identity = new ClaimsIdentity(
                 OpenIdConnectServerDefaults.AuthenticationScheme,
                 OpenIdConnectConstants.Claims.Name, null);
 
             identity.AddClaim(OpenIdConnectConstants.Claims.Subject,
-                info.Username,
+                info.UserName,
                 OpenIdConnectConstants.Destinations.AccessToken);
 
-            identity.AddClaim(OpenIdConnectConstants.Claims.Name, info.Username,
+            identity.AddClaim(OpenIdConnectConstants.Claims.Name, info.UserName,
                 OpenIdConnectConstants.Destinations.AccessToken);
             var principal = new ClaimsPrincipal(identity);
             // Ask OpenIddict to generate a new token and return an OAuth2 token response.
@@ -176,15 +165,15 @@ namespace ScoutingServer.Controllers {
             return SignOut();
         }
 
-        private bool IsPasswordValid(string username, string password) {
-            var security = context.Accounts.Where(a => a.Username == username).ToList().FirstOrDefault();
+        private Account IsPasswordValid(string userName, string password) {
+            var security = context.Accounts.FirstOrDefault(a => a.UserName == userName);
             if(security != null) {
                 byte[] incoming = CustomLoginProviderUtils.hash(password, security.Salt);
-                if(CustomLoginProviderUtils.slowEquals(incoming, security.SaltedAndHashedPassword)) {
-                    return true;
+                if(CustomLoginProviderUtils.slowEquals(incoming, Encoding.ASCII.GetBytes(security.PasswordHash))) {
+                    return security;
                 }
             }
-            return false;
+            return null;
         }
 
         [Authorize]
@@ -199,8 +188,8 @@ namespace ScoutingServer.Controllers {
         [Route("GetAccountInfo")]
         [ActionName("GetAccountInfo")]
         [HttpPost]
-        public ClientAccount GetAccount(string username) {
-            return context.Accounts.FirstOrDefault(a => a.Username == username).GetClientAccount();
+        public ClientAccount GetAccount(string UserName) {
+            return context.Accounts.FirstOrDefault(a => a.UserName == UserName).GetClientAccount();
         }
 
         [Authorize]
@@ -210,17 +199,17 @@ namespace ScoutingServer.Controllers {
         public List<ClientAccount> GetAccount(IList<string> id) {
             foreach(var i in id) {
             }
-            var results = context.Accounts.Where(a => id.Contains(a.Username)).ToList().GetClientList(context);
+            var results = context.Accounts.Where(a => id.Contains(a.UserName)).ToList().GetClientList(context);
             return results;
         }
 
         [Authorize]
-        [Route("UsernameExists")]
-        [ActionName("UsernameExists")]
+        [Route("UserNameExists")]
+        [ActionName("UserNameExists")]
         [HttpPost]
-        public HttpResponseMessage UsernameExists(string un) {
-            var thing = context.Accounts.Where(a => a.Username == un).SingleOrDefault();
-            if(thing != null && thing.Username != null) {
+        public HttpResponseMessage UserNameExists(string un) {
+            var thing = context.Accounts.FirstOrDefault(a => a.UserName == un);
+            if(thing != null && thing.UserName != null) {
                 return new HttpResponseMessage(HttpStatusCode.Found);
             }
             return new HttpResponseMessage(HttpStatusCode.Unused);
@@ -277,7 +266,7 @@ namespace ScoutingServer.Controllers {
 
             if(string.IsNullOrWhiteSpace(provider)) {
                 UserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                account = context.Accounts.SingleOrDefault(a => a.Username == UserId);
+                account = context.Accounts.SingleOrDefault(a => a.UserName == UserId);
             }/* else {
                 if(string.Equals(provider, "facebook", StringComparison.OrdinalIgnoreCase)) {
                     creds = await User.GetAppServiceIdentityAsync<FacebookCredentials>(Request);
@@ -324,7 +313,7 @@ namespace ScoutingServer.Controllers {
 
             return (from person in me
                     select new ClientAccount() {
-                        Username = person.Username,
+                        Username = person.UserName,
                         RealName = person.RealName,
                         TeamNumber = person.TeamNumber
                     }).ToList();

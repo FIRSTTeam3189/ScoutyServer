@@ -8,7 +8,7 @@ using ScoutingServer.Models;
 
 namespace RobotServer.Models
 {
-    public class RoboContext : IdentityDbContext {        
+    public class RoboContext : IdentityDbContext<Account> {        
 
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Event> Events { get; set; }

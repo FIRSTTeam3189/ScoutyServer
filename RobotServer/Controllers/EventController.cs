@@ -67,12 +67,13 @@ namespace ScoutingServer.Controllers {
         public async Task<List<ClientTeam>> GetTeams(EventTeamsRequest request) {
             BlueAllianceContext refresher = new BlueAllianceContext();
             var teams = (await refresher.GetEvent(request.Year, request.EventId)).Teams;
-            var even = context.Events.Include(x => x.TeamEvents).ThenInclude(c => c.Team).Where(x => x.EventId == request.EventId && x.GetYear() == request.Year)
-                .FirstOrDefault();
+            var even =
+                context.Events.Include(x => x.TeamEvents)
+                    .ThenInclude(c => c.Team)
+                    .FirstOrDefault(x => x.EventId == request.EventId && x.GetYear() == request.Year);
             if(even == null) {
                 await Refresh(new RefreshEventRequest() { Year = request.Year });
-                even = context.Events.Where(x => x.EventId == request.EventId)
-                    .FirstOrDefault();
+                even = context.Events.FirstOrDefault(x => x.EventId == request.EventId);
             }
             if(even != null) {
                 foreach(var team in teams) {
