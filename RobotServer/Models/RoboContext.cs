@@ -18,7 +18,7 @@ namespace RobotServer.Models
         public DbSet<Performance> Performances { get; set; }
 
         public DbSet<TeamEvent> TeamEvents { get; set; }
-        public DbSet<Note> Notes { get; set; }
+        public DbSet<DataSheet> Notes { get; set; }
 
         public RoboContext(DbContextOptions<RoboContext> options) : base(options) {
 
@@ -49,6 +49,10 @@ namespace RobotServer.Models
             //modelBuilder.Entity<RobotEvent>().HasOne<Account>(i => i.Poster).WithMany(q => q.RobotEvents).HasForeignKey(b => b.PosterId);
             //RobotEvents.Include(u => u.Poster);
             //Accounts.Include(o => o.RobotEvents);
+
+            modelBuilder.Entity<Picture>().HasOne<DataSheet>(l => l.DataSheet).WithMany(k => k.Pictures).HasForeignKey(a => a.DataSheetId);
+            modelBuilder.Entity<Note>().HasOne<DataSheet>(g => g.DataSheet).WithMany(t => t.Notes).HasForeignKey(s => s.DataSheetId);
+            modelBuilder.Entity<DataSheet>().HasKey(r => new { r.Year, r.TeamNumber});
 
             base.OnModelCreating(modelBuilder);
         }
