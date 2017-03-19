@@ -1,16 +1,13 @@
-﻿using ScoutingServer.SQLDataObjects;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using static RobotServer.SQLDataObjects.DataSheet;
 
-namespace RobotServer.SQLDataObjects
+namespace RobotServer.ClientData
 {
-    public class DataSheet {
-        [Key]
-        public string Id { get; set; }
+    public class ClientDataSheet
+    {
         public string Drivetrain { get; set; }
         public string Autonomous { get; set; }
         public string RobotSpeed { get; set; }
@@ -21,27 +18,10 @@ namespace RobotServer.SQLDataObjects
         public ExLevel HumanPlayer { get; set; }
         public int ExpectedGears { get; set; }
         public int ExpectedBalls { get; set; }
-        public List<Note> Notes { get; set; }
+        public List<ClientNote> Notes { get; set; }
+        public List<String> Pictures { get; set; }
         public int TeamNumber { get; set; }
-        public Team Team { get; set; }
         public int Year { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
-
-        public DataSheet()
-        {
-
-        }
-
-        public enum ExLevel {
-            NA,
-            Little,
-            Some,
-            OneYear,
-            TwoYears,
-            ThreeYears,
-            FourToSixYears,
-            SevenPlusYears
-        }
     }
 }

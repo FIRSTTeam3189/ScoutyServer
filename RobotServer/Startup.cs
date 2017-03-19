@@ -14,6 +14,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.Extensions.Options;
 using RobotServer.SQLDataObjects;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace RobotServer {
     public class Startup {
@@ -36,37 +38,39 @@ namespace RobotServer {
         public void ConfigureServices(IServiceCollection services) {
             // Add framework services.
             services.AddMvc();
+
             services.AddDbContext<RoboContext>(options => {
                 options.UseSqlServer(Configuration.GetConnectionString("RoboDatabase"));
-                // Register the entity sets needed by OpenIddict.
-                // Note: use the generic overload if you need
-                // to replace the default OpenIddict entities.
-                options.UseOpenIddict();
             });
 
-            services.AddOpenIddict(options =>
+            services.AddIdentity<Account, IdentityRole>(opt =>
             {
-                // Register the Entity Framework stores.
-                options.AddEntityFrameworkCoreStores<RoboContext>();
-                // Register the ASP.NET Core MVC binder used by OpenIddict.
-                // Note: if you don't call this method, you won't be able to
-                // bind OpenIdConnectRequest or OpenIdConnectResponse parameters.
-                options.AddMvcBinders();
-                // Enable the token endpoint.
-                options.EnableTokenEndpoint("/connect/token");
-                // Enable the password flow.
-                options.AllowPasswordFlow();
-                // During development, you can disable the HTTPS requirement.
-                options.DisableHttpsRequirement();
-            });
+                opt.Password.RequiredLength = 8;
+                opt.Password.RequireDigit = false;
+                opt.Password.RequireLowercase = false;
+                opt.Password.RequireUppercase = false;
+                opt.Password.RequireNonAlphanumeric = false;
+
+                opt.SignIn.RequireConfirmedEmail = false;
+                opt.SignIn.RequireConfirmedPhoneNumber = false;
+            }).AddEntityFrameworkStores<RoboContext>().AddDefaultTokenProviders();
+
+            services.AddIdentityServer().AddTemporarySigningCredential().AddInMemoryPersistedGrants()
+                .AddInMemoryIdentityResources(Config.GetIdentityResources()).AddInMemoryApiResources(Config.GetApiResources())
+                .AddInMemoryClients(Config.GetClients()).AddAspNetIdentity<Account>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, RoboContext context) {
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context) {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
-
-            RoboContext.Init(context);
+            app.UseIdentityServerAuthentication(new IdentityServerAuthenticationOptions()
+            {
+                Authority = Config.HOST,
+                RequireHttpsMetadata = true,
+                ApiName = "api"
+            });
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -79,11 +83,13 @@ namespace RobotServer {
                 app.UseExceptionHandler("/Home/Error");
             }
 
+            app.UseIdentity();
+            app.UseIdentityServer();
+
             app.UseStaticFiles();
 
-            app.UseOAuthValidation();
-            // Register the OpenIddict middleware.
-            app.UseOpenIddict();
+            RoboContext.Init(um, context);
+
             app.UseMvcWithDefaultRoute();
         }
     }

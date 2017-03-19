@@ -5,6 +5,8 @@ using RobotServer.SQLDataObjects;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System;
 using ScoutingServer.Models;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
 
 namespace RobotServer.Models
 {
@@ -18,7 +20,8 @@ namespace RobotServer.Models
         public DbSet<Performance> Performances { get; set; }
 
         public DbSet<TeamEvent> TeamEvents { get; set; }
-        public DbSet<DataSheet> Notes { get; set; }
+        public DbSet<DataSheet> DataSheets { get; set; }
+        public DbSet<Note> Notes { get; set; }
 
         public RoboContext(DbContextOptions<RoboContext> options) : base(options) {
 
@@ -50,25 +53,18 @@ namespace RobotServer.Models
             //RobotEvents.Include(u => u.Poster);
             //Accounts.Include(o => o.RobotEvents);
 
-            modelBuilder.Entity<Picture>().HasOne<DataSheet>(l => l.DataSheet).WithMany(k => k.Pictures).HasForeignKey(a => a.DataSheetId);
             modelBuilder.Entity<Note>().HasOne<DataSheet>(g => g.DataSheet).WithMany(t => t.Notes).HasForeignKey(s => s.DataSheetId);
-            modelBuilder.Entity<DataSheet>().HasKey(r => new { r.Year, r.TeamNumber});
 
             base.OnModelCreating(modelBuilder);
         }
 
-        public static void Init(RoboContext context) {
+        public static void Init(UserManager<Account> um, RoboContext context) {
             //context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
-            var salt = CustomLoginProviderUtils.generateSalt();
-            /*context.Accounts.Add(new Account() {
-                RealName = "Dev",
-                Username = "DevBo",
-                TeamNumber = 3189,
-                Salt = salt,
-                SaltedAndHashedPassword = CustomLoginProviderUtils.hash("devaregod", salt)
-            });
-            context.SaveChanges();*/
+            /*um.CreateAsync(new Account()
+            {
+                UserName = "DevBo"
+            }, "devaregod").Wait();*/
         }
     }
 

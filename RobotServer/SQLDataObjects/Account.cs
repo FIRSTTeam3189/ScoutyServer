@@ -27,7 +27,6 @@ namespace RobotServer.SQLDataObjects {
         public string RealName { get; set; }
         public int TeamNumber { get; set; }
         //public List<RobotEvent> RobotEvents { get; set; }
-        public byte[] Salt { get; set; }
         //public byte[] SaltedAndHashedPassword { get; set; }
 
         public static bool operator ==(Account a, Account b) {

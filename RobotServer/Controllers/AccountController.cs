@@ -18,11 +18,11 @@ using RobotServer.ClientData;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Web.Http;
-using AspNet.Security.OpenIdConnect.Server;
-using AspNet.Security.OpenIdConnect.Primitives;
-using AspNet.Security.OpenIdConnect.Extensions;
 using Microsoft.AspNetCore.Http;
 using NUglify.Helpers;
+using Microsoft.AspNetCore.Identity;
+using IdentityModel.Client;
+using RobotServer;
 
 namespace ScoutingServer.Controllers {
 
@@ -31,11 +31,13 @@ namespace ScoutingServer.Controllers {
         public const int MIN_PASSWORD_LENGTH = 8;
         public const int MAX_PASSWORD_LENGTH = 128;
         private readonly RoboContext context;
+        private readonly UserManager<Account> UserMan;
         private readonly ILogger logger;
 
-        public AccountController(ILoggerFactory loggerFactory, RoboContext context) {
+        public AccountController(UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context) {
             this.context = context;
             logger = loggerFactory.CreateLogger("Account");
+            UserMan = um;
         }
 
         [Route("CustomRegister")]
@@ -48,17 +50,13 @@ namespace ScoutingServer.Controllers {
             if(error.IsNullOrWhiteSpace()) {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
             } else {
-                byte[] salt = CustomLoginProviderUtils.generateSalt();
                 string guid = Guid.NewGuid().ToString();
 
                 Account newAccount = new Account() {
-                    UserName = request.Username,
-                    Salt = salt,
-                    PasswordHash = Encoding.ASCII.GetString(CustomLoginProviderUtils.hash(request.Password, salt))
+                    UserName = request.Username
                 };
 
-                context.Accounts.Add(newAccount);
-                context.SaveChanges();
+                UserMan.CreateAsync(newAccount, request.Password).Wait();
 
                 return new HttpResponseMessage(HttpStatusCode.Created);
             }
@@ -121,40 +119,28 @@ namespace ScoutingServer.Controllers {
             return null;
         }
 
-        [Route("Login")]
-        [ActionName("Login")]
+        [Route("CustomLogin")]
+        [ActionName("CustomLogin")]
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult Login([FromBody]LoginRequest request) {
-            logger.LogError($"{request.Username} : {request.Password}");
-            if(!Regex.IsMatch(request.Username, "^[a-zA-Z0-9]{4,}$")) {
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
+        public async Task<IActionResult> Login([FromBody]LoginRequest request) {
+            if (ModelState.IsValid)
+            {
+                var disco = await DiscoveryClient.GetAsync(Config.HOST);
+                var tokenClient = new TokenClient(disco.TokenEndpoint, "ro.client", Config.SECRET);
+                var tokenResponse = await tokenClient.RequestResourceOwnerPasswordAsync(request.Username, request.Password,
+                    "api");
+
+                if (tokenResponse.IsError)
+                {
+                    logger.LogError(tokenResponse.Error);
+                    return BadRequest("Invalid User/Pass");
+                }
+
+                return Json(tokenResponse.Json);
             }
-            var info = IsPasswordValid(request.Username, request.Password);
-            if(info == null)
-                throw new HttpResponseException(HttpStatusCode.Unauthorized);
 
-            logger.LogError("It authed");
-
-            var identity = new ClaimsIdentity(
-                OpenIdConnectServerDefaults.AuthenticationScheme,
-                OpenIdConnectConstants.Claims.Name, null);
-
-            identity.AddClaim(OpenIdConnectConstants.Claims.Subject,
-                info.UserName,
-                OpenIdConnectConstants.Destinations.AccessToken);
-
-            identity.AddClaim(OpenIdConnectConstants.Claims.Name, info.UserName,
-                OpenIdConnectConstants.Destinations.AccessToken);
-            var principal = new ClaimsPrincipal(identity);
-            // Ask OpenIddict to generate a new token and return an OAuth2 token response.
-//            {
-//                "access_token"  : "...",
-//                "token_type"    : "...",
-//                "expires_in"    : "...",
-//                "refresh_token" : "...",
-//            }
-            return SignIn(principal, OpenIdConnectServerDefaults.AuthenticationScheme);
+            return BadRequest("Invalid model");
         }
 
         [Route("Logout")]
@@ -165,15 +151,14 @@ namespace ScoutingServer.Controllers {
             return SignOut();
         }
 
-        private Account IsPasswordValid(string userName, string password) {
-            var security = context.Accounts.FirstOrDefault(a => a.UserName == userName);
-            if(security != null) {
-                byte[] incoming = CustomLoginProviderUtils.hash(password, security.Salt);
-                if(CustomLoginProviderUtils.slowEquals(incoming, Encoding.ASCII.GetBytes(security.PasswordHash))) {
-                    return security;
-                }
+        private bool IsPasswordValid(string userName, string password, byte[] salt, string hashedPasswaord) {
+            logger.LogError("test");
+            string incoming = Encoding.ASCII.GetString(CustomLoginProviderUtils.hash(password, salt));
+            logger.LogError("fuck");                
+            if(incoming == hashedPasswaord) {
+                return true;
             }
-            return null;
+            return false;
         }
 
         [Authorize]
