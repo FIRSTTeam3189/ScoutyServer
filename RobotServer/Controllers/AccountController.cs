@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using ScoutingServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using RobotServer.Models;
@@ -15,8 +14,6 @@ using Microsoft.Extensions.Logging;
 using RobotServer.Interfaces;
 using RobotServer.SQLDataObjects;
 using RobotServer.ClientData;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using System.Web.Http;
 using Microsoft.AspNetCore.Http;
 using NUglify.Helpers;
@@ -24,7 +21,8 @@ using Microsoft.AspNetCore.Identity;
 using IdentityModel.Client;
 using RobotServer;
 
-namespace ScoutingServer.Controllers {
+namespace ScoutingServer.Controllers
+{
 
     [Route("api/[Controller]")]
     public class AccountController : Controller {
@@ -33,11 +31,13 @@ namespace ScoutingServer.Controllers {
         private readonly RoboContext context;
         private readonly UserManager<Account> UserMan;
         private readonly ILogger logger;
+        //private readonly SignInManager<Account> SignMan;
 
-        public AccountController(UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context) {
+        public AccountController(/*SignInManager<Account> sim, */UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context) {
             this.context = context;
             logger = loggerFactory.CreateLogger("Account");
             UserMan = um;
+            //SignMan = sim;
         }
 
         [Route("CustomRegister")]
@@ -74,6 +74,8 @@ namespace ScoutingServer.Controllers {
                 ClaimsPrincipal principal = this.User as ClaimsPrincipal;
                 string provider = principal.FindFirst("http://schemas.microsoft.com/identity/claims/identityprovider").Value;
 
+                SignIn();
+                    
                 ProviderCredentials creds = null;
                 if(string.Equals(provider, "facebook", StringComparison.OrdinalIgnoreCase)) {
                     creds = await this.User.GetAppServiceIdentityAsync<FacebookCredentials>(this.Request);
@@ -100,8 +102,8 @@ namespace ScoutingServer.Controllers {
                     return new HttpResponseMessage(HttpStatusCode.BadRequest);
                 }
             }
-        }*/
-
+        }
+        */
         public string RegisterCheck(string UserName, string password) {
             if(UserName.Length >= 4 && UserName.Length <= 16 && !Regex.IsMatch(UserName, "^[a-zA-Z0-9]{4,}$")) {
                 return "Invalid UserName (at least 4 chars and less than 16, alphanumeric only)";
@@ -149,16 +151,6 @@ namespace ScoutingServer.Controllers {
         [HttpPost]
         public IActionResult Logout(LoginRequest request) {
             return SignOut();
-        }
-
-        private bool IsPasswordValid(string userName, string password, byte[] salt, string hashedPasswaord) {
-            logger.LogError("test");
-            string incoming = Encoding.ASCII.GetString(CustomLoginProviderUtils.hash(password, salt));
-            logger.LogError("fuck");                
-            if(incoming == hashedPasswaord) {
-                return true;
-            }
-            return false;
         }
 
         [Authorize]

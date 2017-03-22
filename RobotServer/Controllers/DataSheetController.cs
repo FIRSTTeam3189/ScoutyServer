@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using RobotServer.ClientData;
 using RobotServer.Interfaces;
 using BlueAllianceClient;
+using RobotServer.SQLDataObjects;
 
 namespace ScoutingServer.Controllers {
 
@@ -32,18 +33,53 @@ namespace ScoutingServer.Controllers {
         [Route("GetDataSheet")]
         [ActionName("GetDataSheet")]
         [AllowAnonymous]
-        [HttpPost]
-        public void GetDataSheet(TeamInfoRequest request) {
-            
+        [HttpGet]
+        public void GetDataSheet(int teamNumber) {
+            context.DataSheets.FirstOrDefault(x => x.TeamNumber == teamNumber && x.Year == 2017);
         }
 
         [Route("PutDataSheet")]
         [ActionName("PutDataSheet")]
         [AllowAnonymous]
         [HttpPost]
-        public void PutDataSheet(TeamInfoRequest request)
+        public HttpResponseMessage PutDataSheet(ClientDataSheet request)
         {
+            var temp = context.DataSheets.Where(x => x.TeamNumber == request.TeamNumber && x.Year == request.Year);
+            if (temp.Count() <= 0) {
+                context.DataSheets.Add(DataSheet.GetDataSheet(request));
+                return new HttpResponseMessage(HttpStatusCode.Created);
+            }
+            var real = temp.FirstOrDefault();
+            List<Note> notes = new List<Note>();
+            foreach (var n in request.Notes)
+            {
+                var asdf = real.Notes.Where(x => x.Id == n.Id);
+                if(asdf.Count() <= 0){
+                    Note s = Note.GetNote(n);
+                    s.DataSheetId = real.Id;
+                    real.Notes.Add(s);
+                    continue;
+                }
+                var note = asdf.FirstOrDefault();
+                note.Data = n.Data;
+                note.PerformenceId = n.PerformenceId;
+                note.URI = n.URI;
+            }
+            real.Autonomous = request.Autonomous;
+            real.ClimbSpeed = request.ClimbSpeed;
+            real.CoachEx = request.CoachEx;
+            real.CoDriverEx = request.CoDriverEx;
+            real.DriverEx = request.DriverEx;
+            real.Drivetrain = request.Drivetrain;
+            real.ExpectedBalls = request.ExpectedBalls;
+            real.ExpectedGears = request.ExpectedGears;
+            real.HumanPlayer = request.HumanPlayer;
+            real.RobotSpeed = request.RobotSpeed;
 
+            context.DataSheets.Update(real);
+            context.SaveChanges();
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
     }
 }

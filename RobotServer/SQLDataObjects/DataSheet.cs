@@ -1,4 +1,5 @@
-﻿using ScoutingServer.SQLDataObjects;
+﻿using RobotServer.ClientData;
+using ScoutingServer.SQLDataObjects;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -31,6 +32,26 @@ namespace RobotServer.SQLDataObjects
         public DataSheet()
         {
 
+        }
+
+        public static DataSheet GetDataSheet(ClientDataSheet data)
+        {
+            return new DataSheet()
+            {
+                Autonomous = data.Autonomous,
+                ClimbSpeed = data.ClimbSpeed,
+                CoachEx = data.CoachEx,
+                CoDriverEx = data.CoDriverEx,
+                DriverEx = data.DriverEx,
+                Drivetrain = data.Drivetrain,
+                ExpectedBalls = data.ExpectedBalls,
+                ExpectedGears = data.ExpectedGears,
+                HumanPlayer = data.HumanPlayer,
+                Notes = data.Notes.Select(x => Note.GetNote(x)).ToList(),
+                RobotSpeed = data.RobotSpeed,
+                TeamNumber = data.TeamNumber,
+                Year = data.Year
+            };
         }
 
         public enum ExLevel {

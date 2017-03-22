@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RobotServer.ClientData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,5 +14,16 @@ namespace RobotServer.SQLDataObjects
         public DataSheet DataSheet { get; set; }
         public string Data { get; set; }
         public string URI { get; set; }
+
+        public static Note GetNote(ClientNote c)
+        {
+            return new Note()
+            {
+                Data = c.Data,
+                DataSheetId = c.DataSheetId,
+                PerformenceId = c.PerformenceId,
+                URI = c.URI
+            };
+        }
     }
 }
