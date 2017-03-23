@@ -98,12 +98,24 @@ namespace ScoutingServer.Controllers {
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> GetMatchs([FromBody]EventMatchesRequest request) {
+            if (GetEvent(logger,context,request.EventId,request.Year) == null)
+            {
+                throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
+            }
+            return Ok();
+        }
+
+        public static async Task<Event> GetEvent(ILogger logger, RoboContext context, string EventId, int Year)
+        {
             BlueAllianceContext refresher = new BlueAllianceContext();
             Event baEv;
-            try {
-                logger.LogInformation($"Requesting {request.EventId} which is {request.Year} and {request.EventId.Substring(4)}");
-                baEv = new Event(await refresher.GetEvent(request.Year, request.EventId.Substring(4).Trim()));
-            } catch(Exception ex) {
+            try
+            {
+                logger.LogInformation($"Requesting {EventId} which is {Year} and {EventId.Substring(4)}");
+                baEv = new Event(await refresher.GetEvent(Year, EventId.Substring(4).Trim()));
+            }
+            catch (Exception ex)
+            {
                 logger.LogError("GetMatchs", ex);
                 throw new HttpResponseException(System.Net.HttpStatusCode.NotFound);
             }
@@ -111,27 +123,32 @@ namespace ScoutingServer.Controllers {
             var existEvent = await context.Events
                 .Include(x => x.Matchs)
                 .Include(x => x.Teams)
-                .FirstOrDefaultAsync(x => x.EventId == request.EventId);
+                .FirstOrDefaultAsync(x => x.EventId == EventId);
 
-            if(existEvent == null) {
-                logger.LogInformation($"Adding new event {request.EventId}");
+            if (existEvent == null)
+            {
+                logger.LogInformation($"Adding new event {EventId}");
                 await context.Events.AddAsync(baEv);
                 await context.SaveChangesAsync();
-                return Ok();
-            } else {
-                logger.LogInformation($"Updating existing event {request.EventId}");
-                if(existEvent.Teams == null)
+                return baEv;
+            }
+            else
+            {
+                logger.LogInformation($"Updating existing event {EventId}");
+                if (existEvent.Teams == null)
                     existEvent.Teams = new List<SQLDataObjects.Team>();
-                if(existEvent.Matchs == null)
+                if (existEvent.Matchs == null)
                     existEvent.Matchs = new List<Match>();
-                if(existEvent.TeamEvents == null)
+                if (existEvent.TeamEvents == null)
                     existEvent.TeamEvents = new List<TeamEvent>();
 
                 var notHereTeams = baEv.Teams.Where(x => !existEvent.Teams.Contains(x)).ToList();
-                if(notHereTeams.Count != 0) {
+                if (notHereTeams.Count != 0)
+                {
                     // See if team is already in DB
-                    foreach(var t in notHereTeams)
-                        if(!(await context.Teams.ContainsAsync(t))) {
+                    foreach (var t in notHereTeams)
+                        if (!(await context.Teams.ContainsAsync(t)))
+                        {
                             await context.Teams.AddAsync(t);
                             existEvent.TeamEvents.Add(new TeamEvent(t, existEvent));
                         }
@@ -139,14 +156,17 @@ namespace ScoutingServer.Controllers {
                 existEvent.Matchs.AddRange(baEv.Matchs.Where(x => !existEvent.Matchs.Contains(x)));
                 context.Events.Update(existEvent);
                 await context.Database.OpenConnectionAsync();
-                try {
+                try
+                {
                     context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Teams ON");
                     await context.SaveChangesAsync();
                     context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Teams OFF");
-                } finally {
+                }
+                finally
+                {
                     context.Database.CloseConnection();
                 }
-                return Ok();
+                return baEv;
             }
         }
     }

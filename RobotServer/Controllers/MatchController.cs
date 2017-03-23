@@ -6,6 +6,7 @@ using RobotServer.Models;
 using System.Linq;
 using System.Web.Http;
 using System.Collections.Generic;
+using RobotServer.SQLDataObjects;
 
 namespace ScoutingServer.Controllers
 {
@@ -29,6 +30,21 @@ namespace ScoutingServer.Controllers
         public List<ClientPerformance> GetPerformances(string EventCode)
         {
             return context.Performances.Where(x => x.Match.Event.EventCode == EventCode).ToList().Select(x => x.getClient()).ToList();
+        }
+
+        [Route("PutMatches")]
+        [ActionName("PutMatches")]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult PutMatches(ClientMatch cm)
+        {
+            if (!context.Matches.Any(a => a.MatchId == cm.MatchId))
+            {
+                context.Add(new Match(cm));
+                context.SaveChanges();
+                Ok();
+            }
+            throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
         }
 
         [Route("GetMatches")]

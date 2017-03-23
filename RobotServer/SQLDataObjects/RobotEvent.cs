@@ -23,12 +23,13 @@ namespace RobotServer.SQLDataObjects {
             };
         }
 
-        public static RobotEvent FromClient(ClientRobotEvent re) {
+        public static RobotEvent FromClient(ClientRobotEvent re, Account a) {
             return new RobotEvent() {
                 Action = re.Action,
                 MatchId = re.MatchId,
                 Period = re.Period,
-                TeamNumber = re.TeamId
+                TeamNumber = re.TeamId,
+                Poster = a
             };
         }
     }

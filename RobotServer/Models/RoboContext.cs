@@ -7,6 +7,9 @@ using System;
 using ScoutingServer.Models;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+using BlueAllianceClient;
+using Microsoft.Extensions.Logging;
+using ScoutingServer.Controllers;
 
 namespace RobotServer.Models
 {
@@ -58,13 +61,50 @@ namespace RobotServer.Models
             base.OnModelCreating(modelBuilder);
         }
 
-        public static void Init(UserManager<Account> um, RoboContext context) {
+        public static async void Init(UserManager<Account> um, RoboContext context, ILogger logger) {
             //context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
             /*um.CreateAsync(new Account()
             {
                 UserName = "DevBo"
             }, "devaregod").Wait();*/
+            BlueAllianceContext refresher = new BlueAllianceContext();
+            try
+            {
+                var events = await refresher.GetEvents(2017);
+
+                var dbEvents = context.Events.ToList();
+
+                foreach (var e in dbEvents)
+                {
+                    var ev = events.FirstOrDefault(x => x.Key == e.EventId);
+                    if (ev != null)
+                    {
+                        e.Location = ev.Location;
+                        e.EventId = ev.Key;
+                        events.Remove(ev);
+                    }
+                    else
+                    {
+                        context.Events.Remove(e);
+                    }
+                }
+
+                foreach (var e in events)
+                {
+                    context.Events.Add(new Event(e));
+                }
+
+                context.SaveChanges();
+                foreach (var e in events)
+                {
+                    await EventController.GetEvent(logger, context, e.Key, 2017);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e.ToString());
+            }
         }
     }
 

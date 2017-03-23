@@ -88,7 +88,7 @@ namespace RobotServer {
 
             app.UseStaticFiles();
 
-            RoboContext.Init(um, context);
+            RoboContext.Init(um, context, loggerFactory.CreateLogger("init"));
 
             app.UseMvcWithDefaultRoute();
         }

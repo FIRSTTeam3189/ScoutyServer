@@ -28,6 +28,13 @@ namespace RobotServer.SQLDataObjects
             Time = match.MatchInfo();
         }
 
+        public Match(ClientMatch match)
+        {
+            MatchId = match.MatchId;
+            MatchInfo = match.MatchInfo;
+            EventId = match.EventId;
+        }
+
         public ClientMatch GetClientMatch() {
             return new ClientMatch() {
                 MatchId = MatchId,
