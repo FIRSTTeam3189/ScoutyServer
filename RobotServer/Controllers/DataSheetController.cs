@@ -40,7 +40,7 @@ namespace ScoutingServer.Controllers {
 
         [Route("PutDataSheet")]
         [ActionName("PutDataSheet")]
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost]
         public HttpResponseMessage PutDataSheet(ClientDataSheet request)
         {
@@ -64,18 +64,22 @@ namespace ScoutingServer.Controllers {
                 note.Data = n.Data;
                 note.PerformenceId = n.PerformenceId;
                 note.URI = n.URI;
+                context.Notes.Update(note);
             }
-            real.Autonomous = request.Autonomous;
-            real.ClimbSpeed = request.ClimbSpeed;
-            real.CoachEx = request.CoachEx;
-            real.CoDriverEx = request.CoDriverEx;
-            real.DriverEx = request.DriverEx;
-            real.Drivetrain = request.Drivetrain;
-            real.ExpectedBalls = request.ExpectedBalls;
-            real.ExpectedGears = request.ExpectedGears;
-            real.HumanPlayer = request.HumanPlayer;
-            real.RobotSpeed = request.RobotSpeed;
-
+            if (request.DirtyBoy)
+            {
+                real.Autonomous = request.Autonomous;
+                real.ClimbSpeed = request.ClimbSpeed;
+                real.CoachEx = request.CoachEx;
+                real.CoDriverEx = request.CoDriverEx;
+                real.DriverEx = request.DriverEx;
+                real.Drivetrain = request.Drivetrain;
+                real.ExpectedBalls = request.ExpectedBalls;
+                real.ExpectedGears = request.ExpectedGears;
+                real.HumanPlayer = request.HumanPlayer;
+                real.RobotSpeed = request.RobotSpeed;
+            }
+            
             context.DataSheets.Update(real);
             context.SaveChanges();
 

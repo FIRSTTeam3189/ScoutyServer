@@ -25,7 +25,9 @@ namespace RobotServer.Controllers
         }
 
         [HttpPost("TeamStats")]
+        [ActionName("TeamStats")]
         [AllowAnonymous]
+        [HttpPost]
         public async Task<TeamStat> GetStatsForTeam([FromBody]TeamStatRequest request) {
             var eventMatches = await (from x in context.Matches.Where(x => x.EventId == request.EventId).Include(x => x.Performances)
                                       join e in context.RobotEvents.Where(ev => ev.TeamNumber == request.TeamNumber) on x.MatchId equals e.MatchId into eventGroup

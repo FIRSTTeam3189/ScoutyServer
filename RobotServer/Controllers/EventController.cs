@@ -30,7 +30,6 @@ namespace ScoutingServer.Controllers {
 
         [Route("Refresh")]
         [ActionName("Refresh")]
-        //[Authorize]
         [AllowAnonymous]
         [HttpPost]
         public async Task<List<ClientEvent>> Refresh([FromBody]RefreshEventRequest request) {

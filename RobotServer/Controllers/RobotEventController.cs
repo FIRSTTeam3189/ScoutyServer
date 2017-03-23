@@ -26,7 +26,7 @@ namespace RobotServer.Controllers
 
         [Route("Post")]
         [ActionName("Post")]
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PostRobotEvents([FromBody] List<ClientRobotEvent> request) {
             //var user = await AccountController.GetAccount(context, User, Request);

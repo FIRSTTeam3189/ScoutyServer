@@ -147,7 +147,7 @@ namespace ScoutingServer.Controllers
 
         [Route("Logout")]
         [ActionName("Logout")]
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost]
         public IActionResult Logout(LoginRequest request) {
             return SignOut();
