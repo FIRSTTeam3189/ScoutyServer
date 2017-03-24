@@ -16,6 +16,18 @@ namespace RobotServer.SQLDataObjects {
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
 
+        public Performance()
+        {
+
+        }
+
+        public Performance(ClientPerformance cp)
+        {
+            TeamNumber = cp.TeamNumber;
+            MatchId = cp.MatchId;
+            Color = cp.Color;
+        }
+
         public ClientPerformance getClient() {
             return new ClientPerformance() {
                 //Events = Events.Select(x => x.getClient()).ToList(),

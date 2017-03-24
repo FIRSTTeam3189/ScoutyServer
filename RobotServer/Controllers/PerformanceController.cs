@@ -26,6 +26,22 @@ namespace ScoutingServer.Controllers {
             logger = loggerFactory.CreateLogger("Performance");
         }
 
+        [Route("PutPerformances")]
+        [ActionName("PutPerformances")]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult PutPerformances(List<ClientPerformance> cms)
+        {
+            foreach (var cm in cms) {
+                if (!context.Performances.Any(a => a.MatchId == cm.MatchId && a.TeamNumber == cm.TeamNumber))
+                {
+                    context.Performances.Add(new Performance(cm));
+                    context.SaveChanges();
+                }
+            }
+            return Ok();
+        }
+
         [Route("GetPerformances")]
         [ActionName("GetPerformances")]
         [AllowAnonymous]

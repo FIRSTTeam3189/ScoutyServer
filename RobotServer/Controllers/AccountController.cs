@@ -25,7 +25,8 @@ namespace ScoutingServer.Controllers
 {
 
     [Route("api/[Controller]")]
-    public class AccountController : Controller {
+    public class AccountController : Controller
+    {
         public const int MIN_PASSWORD_LENGTH = 8;
         public const int MAX_PASSWORD_LENGTH = 128;
         private readonly RoboContext context;
@@ -33,7 +34,8 @@ namespace ScoutingServer.Controllers
         private readonly ILogger logger;
         //private readonly SignInManager<Account> SignMan;
 
-        public AccountController(/*SignInManager<Account> sim, */UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context) {
+        public AccountController(/*SignInManager<Account> sim, */UserManager<Account> um, ILoggerFactory loggerFactory, RoboContext context)
+        {
             this.context = context;
             logger = loggerFactory.CreateLogger("Account");
             UserMan = um;
@@ -44,22 +46,18 @@ namespace ScoutingServer.Controllers
         [ActionName("CustomRegister")]
         [AllowAnonymous]
         [HttpPost]
-        public HttpResponseMessage CustomRegister([FromBody]CustomRegistrationRequest request) {
-            string error = null;
-            error = RegisterCheck(request.Username, request.Password);
-            if(error.IsNullOrWhiteSpace()) {
-                return new HttpResponseMessage(HttpStatusCode.BadRequest);
-            } else {
-                string guid = Guid.NewGuid().ToString();
+        public HttpResponseMessage CustomRegister([FromBody]CustomRegistrationRequest request)
+        {
+            string guid = Guid.NewGuid().ToString();
 
-                Account newAccount = new Account() {
-                    UserName = request.Username
-                };
+            Account newAccount = new Account()
+            {
+                UserName = request.Username
+            };
 
-                UserMan.CreateAsync(newAccount, request.Password).Wait();
+            UserMan.CreateAsync(newAccount, request.Password).Wait();
 
-                return new HttpResponseMessage(HttpStatusCode.Created);
-            }
+            return new HttpResponseMessage(HttpStatusCode.Created);
         }
         /*
         [Route("Register")]
@@ -104,16 +102,22 @@ namespace ScoutingServer.Controllers
             }
         }
         */
-        public string RegisterCheck(string UserName, string password) {
-            if(UserName.Length >= 4 && UserName.Length <= 16 && !Regex.IsMatch(UserName, "^[a-zA-Z0-9]{4,}$")) {
+        public string RegisterCheck(string UserName, string password)
+        {
+            if (UserName.Length >= 4 && UserName.Length <= 16 && !Regex.IsMatch(UserName, "^[a-zA-Z0-9]{4,}$"))
+            {
                 return "Invalid UserName (at least 4 chars and less than 16, alphanumeric only)";
-            } else if(password != null && password.Length <= MIN_PASSWORD_LENGTH && password.Length >= MAX_PASSWORD_LENGTH) {
+            }
+            else if (password != null && password.Length <= MIN_PASSWORD_LENGTH && password.Length >= MAX_PASSWORD_LENGTH)
+            {
                 return "Invalid password (at least 8 and less than 128 chars required)";
             }
 
             Account account = context.Accounts.FirstOrDefault(a => a.UserName == UserName);
-            if(account != null) {
-                if(!string.IsNullOrWhiteSpace(account.UserName) && account.UserName == UserName) {
+            if (account != null)
+            {
+                if (!string.IsNullOrWhiteSpace(account.UserName) && account.UserName == UserName)
+                {
                     return "That UserName already exists.";
                 }
                 //TODO fix the commented code.
@@ -125,7 +129,8 @@ namespace ScoutingServer.Controllers
         [ActionName("CustomLogin")]
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody]LoginRequest request) {
+        public async Task<IActionResult> Login([FromBody]LoginRequest request)
+        {
             if (ModelState.IsValid)
             {
                 var disco = await DiscoveryClient.GetAsync(Config.HOST);
@@ -149,7 +154,8 @@ namespace ScoutingServer.Controllers
         [ActionName("Logout")]
         [Authorize]
         [HttpPost]
-        public IActionResult Logout(LoginRequest request) {
+        public IActionResult Logout(LoginRequest request)
+        {
             return SignOut();
         }
 
@@ -157,7 +163,8 @@ namespace ScoutingServer.Controllers
         [Route("GetMyAccount")]
         [ActionName("GetMyAccount")]
         [HttpPost]
-        public async Task<ClientAccount> GetMyAccount() {
+        public async Task<ClientAccount> GetMyAccount()
+        {
             return (await GetAccount(context, User, Request)).GetClientAccount();
         }
 
@@ -165,7 +172,8 @@ namespace ScoutingServer.Controllers
         [Route("GetAccountInfo")]
         [ActionName("GetAccountInfo")]
         [HttpPost]
-        public ClientAccount GetAccount(string UserName) {
+        public ClientAccount GetAccount(string UserName)
+        {
             return context.Accounts.FirstOrDefault(a => a.UserName == UserName).GetClientAccount();
         }
 
@@ -173,8 +181,10 @@ namespace ScoutingServer.Controllers
         [Route("GetAccountInfos")]
         [ActionName("GetAccountInfos")]
         [HttpPost]
-        public List<ClientAccount> GetAccount(IList<string> id) {
-            foreach(var i in id) {
+        public List<ClientAccount> GetAccount(IList<string> id)
+        {
+            foreach (var i in id)
+            {
             }
             var results = context.Accounts.Where(a => id.Contains(a.UserName)).ToList().GetClientList(context);
             return results;
@@ -184,9 +194,11 @@ namespace ScoutingServer.Controllers
         [Route("UserNameExists")]
         [ActionName("UserNameExists")]
         [HttpPost]
-        public HttpResponseMessage UserNameExists(string un) {
+        public HttpResponseMessage UserNameExists(string un)
+        {
             var thing = context.Accounts.FirstOrDefault(a => a.UserName == un);
-            if(thing != null && thing.UserName != null) {
+            if (thing != null && thing.UserName != null)
+            {
                 return new HttpResponseMessage(HttpStatusCode.Found);
             }
             return new HttpResponseMessage(HttpStatusCode.Unused);
@@ -233,7 +245,8 @@ namespace ScoutingServer.Controllers
             }
         }*/
 
-        public static async Task<Account> GetAccount(RoboContext context, IPrincipal User, HttpRequest Request) {
+        public static async Task<Account> GetAccount(RoboContext context, IPrincipal User, HttpRequest Request)
+        {
             ClaimsPrincipal principal = User as ClaimsPrincipal;
             string provider = principal.FindFirst("http://schemas.microsoft.com/identity/claims/identityprovider")?.Value;
 
@@ -241,7 +254,8 @@ namespace ScoutingServer.Controllers
             string UserId;
             Account account = null;
 
-            if(string.IsNullOrWhiteSpace(provider)) {
+            if (string.IsNullOrWhiteSpace(provider))
+            {
                 UserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 account = context.Accounts.SingleOrDefault(a => a.UserName == UserId);
             }/* else {
@@ -258,7 +272,8 @@ namespace ScoutingServer.Controllers
                 account = context.Accounts.SingleOrDefault(a => a.Id == UserId);
             }*/
 
-            if(account == null) {
+            if (account == null)
+            {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
             return account;
@@ -285,11 +300,14 @@ namespace ScoutingServer.Controllers
         }*/
     }
 
-    public static class IListAccountInfoExtention {
-        public static List<ClientAccount> GetClientList(this IList<Account> me, RoboContext context) {
+    public static class IListAccountInfoExtention
+    {
+        public static List<ClientAccount> GetClientList(this IList<Account> me, RoboContext context)
+        {
 
             return (from person in me
-                    select new ClientAccount() {
+                    select new ClientAccount()
+                    {
                         Username = person.UserName,
                         RealName = person.RealName,
                         TeamNumber = person.TeamNumber

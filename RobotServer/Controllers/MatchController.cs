@@ -36,15 +36,17 @@ namespace ScoutingServer.Controllers
         [ActionName("PutMatches")]
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult PutMatches(ClientMatch cm)
+        public IActionResult PutMatches(List<ClientMatch> cms)
         {
-            if (!context.Matches.Any(a => a.MatchId == cm.MatchId))
+            foreach (var cm in cms)
             {
-                context.Add(new Match(cm));
-                context.SaveChanges();
-                Ok();
+                if (!context.Matches.Any(a => a.MatchId == cm.MatchId))
+                {
+                    context.Matches.Add(new Match(cm));
+                    context.SaveChanges();
+                }
             }
-            throw new HttpResponseException(System.Net.HttpStatusCode.Conflict);
+            return Ok();
         }
 
         [Route("GetMatches")]

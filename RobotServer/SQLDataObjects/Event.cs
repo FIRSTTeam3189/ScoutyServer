@@ -41,8 +41,10 @@ namespace RobotServer.SQLDataObjects
             }
 
             if(ev.Matches != null) {
-                Matchs = ev.Matches.Select(x => new Match(x)).ToList();
+                Matchs = ev.Matches.Select(x => new Match(x) { }).ToList();
             }
+
+
         }
 
         public int GetYear() {

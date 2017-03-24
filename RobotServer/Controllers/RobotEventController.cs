@@ -30,10 +30,6 @@ namespace RobotServer.Controllers
         [HttpPost]
         public async Task<IActionResult> PostRobotEvents([FromBody] List<ClientRobotEvent> request) {
             var user = await AccountController.GetAccount(context, User, Request);
-            var temp = request.FirstOrDefault()?.MatchId;
-            if (temp != null && !string.IsNullOrWhiteSpace(temp)){
-                await EventController.GetEvent(logger, context, temp.Substring(0,temp.IndexOf('_')), 2017);
-            }
 
             if(!request.Any())
                 throw new HttpResponseException(System.Net.HttpStatusCode.NoContent);              

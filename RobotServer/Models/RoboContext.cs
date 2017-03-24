@@ -98,7 +98,14 @@ namespace RobotServer.Models
                 context.SaveChanges();
                 foreach (var e in events)
                 {
-                    await EventController.GetEvent(logger, context, e.Key, 2017);
+                    try
+                    {
+                        await EventController.GetEvent(logger, context, e.Key, 2017);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                 }
             }
             catch (Exception e)
