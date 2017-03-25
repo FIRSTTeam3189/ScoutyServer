@@ -26,8 +26,6 @@ namespace RobotServer.SQLDataObjects
         public int TeamNumber { get; set; }
         public Team Team { get; set; }
         public int Year { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime UpdatedAt { get; set; }
 
         public DataSheet()
         {

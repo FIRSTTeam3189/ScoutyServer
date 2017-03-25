@@ -7,10 +7,11 @@ using System.Linq;
 using System.Web.Http;
 using System.Collections.Generic;
 using RobotServer.SQLDataObjects;
+using System.Threading.Tasks;
 
 namespace ScoutingServer.Controllers
 {
-
+    [Route("api/[Controller]")]
     public class MatchController : ApiController
     {
 
@@ -36,8 +37,18 @@ namespace ScoutingServer.Controllers
         [ActionName("PutMatches")]
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult PutMatches(List<ClientMatch> cms)
+        public async Task<IActionResult> PutMatches([FromBody]List<ClientMatch> cms)
         {
+            var temp = new List<string>();
+            foreach (var request in cms)
+            {
+                var thing = request.MatchId.Substring(0, request.MatchId.IndexOf('_'));
+                if (temp.Contains(thing))
+                {
+                    await EventController.GetEvent(logger, context, thing, int.Parse(thing.Substring(0, 4)));
+                    temp.Add(thing);
+                }
+            }
             foreach (var cm in cms)
             {
                 if (!context.Matches.Any(a => a.MatchId == cm.MatchId))

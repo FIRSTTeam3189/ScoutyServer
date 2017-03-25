@@ -30,6 +30,12 @@ namespace ScoutingServer.SQLDataObjects
             TeamLocation = team.Location;
         }
 
+        public Team(ClientTeam team)
+        {
+            NickName = team.Name;
+            TeamNumber = team.TeamNumber;
+        }
+
         public ClientTeam GetClientTeam()
         {
             return new ClientTeam()

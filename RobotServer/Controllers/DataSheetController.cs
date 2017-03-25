@@ -19,13 +19,13 @@ using RobotServer.SQLDataObjects;
 
 namespace ScoutingServer.Controllers {
 
-    [Route("api/[Controller]")]
-    public class DataSheetController : Controller {
+    [Route("api/Thingy")]
+    public class DatasheetController : Controller {
 
         private readonly RoboContext context;
         private readonly ILogger logger;
 
-        public DataSheetController(ILoggerFactory loggerFactory, RoboContext context) {
+        public DatasheetController(ILoggerFactory loggerFactory, RoboContext context) {
             this.context = context;
             logger = loggerFactory.CreateLogger("DataSheet");
         }
@@ -37,12 +37,12 @@ namespace ScoutingServer.Controllers {
         public void GetDataSheet(int teamNumber) {
             context.DataSheets.FirstOrDefault(x => x.TeamNumber == teamNumber && x.Year == 2017);
         }
-
+        
+        [Authorize]
         [Route("PutDataSheet")]
         [ActionName("PutDataSheet")]
-        [Authorize]
         [HttpPost]
-        public HttpResponseMessage PutDataSheet(List<ClientDataSheet> requests)
+        public HttpResponseMessage PutDataSheet([FromBody]List<ClientDataSheet> requests)
         {
             foreach (var request in requests)
             {
@@ -50,6 +50,7 @@ namespace ScoutingServer.Controllers {
                 if (temp.Count() <= 0)
                 {
                     context.DataSheets.Add(DataSheet.GetDataSheet(request));
+                    context.SaveChanges();
                 }
                 var real = temp.FirstOrDefault();
                 List<Note> notes = new List<Note>();
@@ -81,9 +82,10 @@ namespace ScoutingServer.Controllers {
                     real.ExpectedGears = request.ExpectedGears;
                     real.HumanPlayer = request.HumanPlayer;
                     real.RobotSpeed = request.RobotSpeed;
+                    context.DataSheets.Update(real);
                 }
 
-                context.DataSheets.Update(real);
+                
                 context.SaveChanges();
             }
             return new HttpResponseMessage(HttpStatusCode.OK);

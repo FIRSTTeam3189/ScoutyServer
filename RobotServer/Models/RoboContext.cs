@@ -69,7 +69,7 @@ namespace RobotServer.Models
                 UserName = "DevBo"
             }, "devaregod").Wait();*/
             BlueAllianceContext refresher = new BlueAllianceContext();
-            try
+            /*try
             {
                 var events = await refresher.GetEvents(2017);
 
@@ -111,7 +111,8 @@ namespace RobotServer.Models
             catch (Exception e)
             {
                 logger.LogError(e.ToString());
-            }
+            }*/
+            await EventController.GetEvent(logger, context, "2017cada", 2017);
         }
     }
 

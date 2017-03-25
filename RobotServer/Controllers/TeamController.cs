@@ -37,6 +37,23 @@ namespace ScoutingServer.Controllers {
             return (GetTeam(request.TeamNumber, context)).GetClientTeam();
         }
 
+        [Route("PutTeams")]
+        [ActionName("PutTeams")]
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult PutTeams([FromBody]List<ClientTeam> cms)
+        {
+            foreach (var cm in cms)
+            {
+                if (!context.Teams.Any(a => a.TeamNumber == cm.TeamNumber && a.TeamNumber == cm.TeamNumber))
+                {
+                    context.Teams.Add(new Team(cm));
+                    context.SaveChanges();
+                }
+            }
+            return Ok();
+        }
+
         public static Team GetTeam(int TeamNumber, RoboContext context) {
 
             return context.Teams.FirstOrDefault(a => a.TeamNumber == TeamNumber);

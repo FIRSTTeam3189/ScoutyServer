@@ -30,7 +30,7 @@ namespace ScoutingServer.Controllers {
         [ActionName("PutPerformances")]
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult PutPerformances(List<ClientPerformance> cms)
+        public IActionResult PutPerformances([FromBody]List<ClientPerformance> cms)
         {
             foreach (var cm in cms) {
                 if (!context.Performances.Any(a => a.MatchId == cm.MatchId && a.TeamNumber == cm.TeamNumber))

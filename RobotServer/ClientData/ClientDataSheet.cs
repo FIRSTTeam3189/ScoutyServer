@@ -19,10 +19,8 @@ namespace RobotServer.ClientData
         public double ExpectedGears { get; set; }
         public double ExpectedBalls { get; set; }
         public List<ClientNote> Notes { get; set; }
-        public List<String> Pictures { get; set; }
         public int TeamNumber { get; set; }
         public int Year { get; set; }
-        public DateTime UpdatedAt { get; set; }
         public bool DirtyBoy { get; set; }
     }
 }

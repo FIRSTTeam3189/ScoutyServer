@@ -13,9 +13,6 @@ namespace RobotServer.SQLDataObjects {
         public Match Match { get; set; }
         public AllianceColor Color { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public DateTime UpdatedAt { get; set; }
-
         public Performance()
         {
 

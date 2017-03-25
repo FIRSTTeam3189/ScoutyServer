@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using BlueAllianceClient;
+using System.Net;
 
 namespace ScoutingServer.Controllers {
 
@@ -105,6 +106,7 @@ namespace ScoutingServer.Controllers {
             return Ok();
         }
 
+
         public static async Task<Event> GetEvent(ILogger logger, RoboContext context, string EventId, int Year)
         {
             BlueAllianceContext refresher = new BlueAllianceContext();
@@ -124,12 +126,22 @@ namespace ScoutingServer.Controllers {
                 .Include(x => x.Matchs)
                 .Include(x => x.Teams)
                 .FirstOrDefaultAsync(x => x.EventId == EventId);
-
+            
             if (existEvent == null)
             {
                 logger.LogInformation($"Adding new event {EventId}");
-                await context.Events.AddAsync(baEv);
-                await context.SaveChangesAsync();
+                await context.Database.OpenConnectionAsync();
+                try
+                {
+                    await context.Events.AddAsync(baEv);
+                    context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Teams ON");
+                    await context.SaveChangesAsync();
+                    context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Teams OFF");
+                }
+                finally
+                {
+                    context.Database.CloseConnection();
+                }
                 return baEv;
             }
             else
@@ -155,6 +167,14 @@ namespace ScoutingServer.Controllers {
                 }
                 existEvent.Matchs.AddRange(baEv.Matchs.Where(x => !existEvent.Matchs.Contains(x)));
                 context.Events.Update(existEvent);
+                foreach (var cm in existEvent.Matchs)
+                {
+                    if (!context.Matches.Any(a => a.MatchId == cm.MatchId))
+                    {
+                        context.Matches.Add(cm);
+                        context.SaveChanges();
+                    }
+                }
                 await context.Database.OpenConnectionAsync();
                 try
                 {

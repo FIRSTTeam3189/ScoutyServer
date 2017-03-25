@@ -90,7 +90,7 @@ namespace RobotServer {
 
             RoboContext.Init(um, context, loggerFactory.CreateLogger("init"));
 
-            app.UseMvcWithDefaultRoute();
+            app.UseMvc();
         }
     }
 }

@@ -36,6 +36,10 @@ namespace RobotServer.Controllers
             return new TeamStat(request.TeamNumber, request.EventId, eventMatches);
         }
 
+        [HttpPost("GetStats")]
+        [ActionName("GetStats")]
+        [AllowAnonymous]
+        [HttpPost]
         public async Task<List<TeamStat>> GetStats([FromBody]StatRequest request) {
             var teamEvents = await (from x in context.Matches
                                     .Where(x => x.EventId == request.EventId)
